@@ -5,6 +5,7 @@
 A full-stack dating application for lonely socks! When you lose a sock, upload it to your profile and search for its perfect match. When two socks match, a chat opens up between their owners to coordinate a reunion.
 
 **Team:**
+
 - **Carlos** - Backend Development
 - **Suzuna** - Frontend Development
 
@@ -55,6 +56,7 @@ root/
 ## 🚀 Getting Started
 
 ### Prerequisites
+
 - Node.js (v16+)
 - MongoDB (local or MongoDB Atlas)
 - npm or yarn
@@ -62,16 +64,19 @@ root/
 ### Backend Setup
 
 1. Navigate to backend folder:
+
    ```bash
    cd backend
    ```
 
 2. Install dependencies:
+
    ```bash
    npm install
    ```
 
 3. Create `.env` file from `.env.example`:
+
    ```bash
    cp .env.example .env
    ```
@@ -87,16 +92,19 @@ root/
 ### Frontend Setup
 
 1. Navigate to frontend folder:
+
    ```bash
    cd frontend
    ```
 
 2. Install dependencies:
+
    ```bash
    npm install
    ```
 
 3. Create `.env` file from `.env.example`:
+
    ```bash
    cp .env.example .env
    ```
@@ -110,6 +118,7 @@ root/
 ## 🔑 Key Features
 
 ### MVP (Minimum Viable Product)
+
 - ✅ User authentication (signup/login)
 - ✅ Sock upload/creation
 - ✅ Sock discovery/browsing
@@ -118,6 +127,7 @@ root/
 - ✅ User profiles with sock listings
 
 ### Future Enhancements
+
 - Rating/review system
 - Advanced filtering (size, material, pattern)
 - Notifications
@@ -133,26 +143,32 @@ root/
 ## 💾 Database Models
 
 ### User
+
 - id, username, email, hashedPassword, profilePicture, bio, createdAt
 
 ### Sock
+
 - id, userId (owner), color, pattern, size, material, images[], description, status, createdAt
 
 ### Match
+
 - id, sock1Id, sock2Id, status (pending/accepted/rejected), createdAt, matchedAt
 
 ### Message
+
 - id, senderId, receiverId, matchId, messageText, createdAt
 
 ## 🔌 API Endpoints (Backend)
 
 ### Authentication
+
 - `POST /api/auth/register` - Create new user
 - `POST /api/auth/login` - Login user
 - `POST /api/auth/logout` - Logout user
 - `GET /api/auth/me` - Get current user
 
 ### Socks
+
 - `GET /api/socks` - Get all socks (with filters)
 - `POST /api/socks` - Create new sock
 - `GET /api/my-socks` - Get user's socks
@@ -160,12 +176,14 @@ root/
 - `DELETE /api/socks/:id` - Delete sock
 
 ### Matches
+
 - `GET /api/matches` - Get user's matches
 - `POST /api/matches` - Create match
 - `PUT /api/matches/:id` - Accept/reject match
 - `DELETE /api/matches/:id` - Unmatch
 
 ### Messages
+
 - `GET /api/conversations` - Get all conversations
 - `GET /api/messages/:matchId` - Get messages for a match
 - Real-time messaging via Socket.IO
@@ -183,6 +201,7 @@ root/
 ## 🔄 Real-time Communication (Socket.IO)
 
 Events:
+
 - `message:send` - Send a message
 - `message:received` - Receive a message
 - `typing:start` - User is typing
@@ -194,13 +213,16 @@ Events:
 ## 📝 Code Quality Tools
 
 ### Biome
+
 All code must pass Biome checks (format & lint):
+
 ```bash
 npm run lint      # Check
 npm run format    # Auto-fix
 ```
 
 ### Husky
+
 Git hooks run Biome before commits. Configure in `.husky/pre-commit`.
 
 ## ⚠️ Important Notes
@@ -215,11 +237,13 @@ Git hooks run Biome before commits. Configure in `.husky/pre-commit`.
 ## 🚢 Deployment
 
 ### Backend Options
+
 - Render.com
 - Railway
 - Heroku (deprecated but possible)
 
 ### Frontend Options
+
 - Vercel
 - Netlify
 - Render.com
@@ -234,15 +258,18 @@ Git hooks run Biome before commits. Configure in `.husky/pre-commit`.
 ## ❓ Troubleshooting
 
 **Backend won't connect to MongoDB:**
+
 - Check MongoDB is running
 - Verify `MONGODB_URI` in `.env`
 
 **Frontend can't reach backend:**
+
 - Check backend is running on port 5000
 - Verify `VITE_API_URL` in frontend `.env`
 - Check CORS configuration in backend
 
 **Socket.IO connection issues:**
+
 - Ensure Socket.IO is initialized on backend
 - Check `VITE_SOCKET_URL` in frontend
 
