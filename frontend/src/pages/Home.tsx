@@ -1,7 +1,6 @@
 import { Link, Navigate } from "react-router-dom";
 import Header from "../components/Navigation/Header";
 import { useAuth } from "../context/AuthContext";
-// import Footer from "../components/Navigation/Navbar";
 
 export default function Home() {
   const { user, loading } = useAuth();
@@ -15,11 +14,11 @@ export default function Home() {
         minHeight: "100vh",
         display: "flex",
         flexDirection: "column",
-        backgroundColor: "#fafafa",
-        paddingBottom: "60px",
+        background: "linear-gradient(160deg, #f4f6f9 0%, #e8f2ff 100%)",
       }}
     >
       <Header />
+
       <main
         style={{
           flexGrow: 1,
@@ -27,83 +26,87 @@ export default function Home() {
           flexDirection: "column",
           justifyContent: "center",
           alignItems: "center",
-          padding: "40px 20px",
+          padding: "60px 20px",
           textAlign: "center",
         }}
       >
-        <div style={{ fontSize: "64px", marginBottom: "20px" }}>🧦❤️🧦</div>
-
-        <h2
-          style={{
-            fontSize: "32px",
-            fontWeight: "bold",
-            margin: "0 0 10px 0",
-            color: "#111",
-          }}
-        >
-          Where Lonely Socks Find Their Match
-        </h2>
-
-        <p
-          style={{
-            fontSize: "16px",
-            color: "#666",
-            maxWidth: "400px",
-            lineHeight: "1.6",
-            margin: "0 0 40px 0",
-          }}
-        >
-          Lost a single sock in the laundry? Don't throw it away. Upload its
-          profile, swipe for potential twins, and coordinate a reunion with its
-          owner.
-        </p>
-
         <div
           style={{
-            display: "flex",
-            flexDirection: "column",
-            gap: "12px",
+            background: "#fff",
+            borderRadius: "24px",
+            padding: "56px 48px",
+            maxWidth: "440px",
             width: "100%",
-            maxWidth: "240px",
+            boxShadow: "0 4px 6px rgba(0,0,0,0.04), 0 16px 48px rgba(0,112,243,0.10)",
           }}
         >
-          <Link
-            to="/signup"
+          <div style={{ fontSize: "60px", marginBottom: "20px", lineHeight: 1 }}>🧦❤️🧦</div>
+
+          <h1
             style={{
-              display: "block",
-              width: "100%",
-              padding: "14px",
-              backgroundColor: "#0070f3",
-              color: "#fff",
-              textDecoration: "none",
-              borderRadius: "8px",
-              fontWeight: "bold",
-              fontSize: "16px",
-              boxShadow: "0 4px 12px rgba(0,112,243,0.2)",
+              fontSize: "28px",
+              fontWeight: 800,
+              margin: "0 0 12px",
+              color: "#111827",
+              letterSpacing: "-0.5px",
             }}
           >
-            Get Started
-          </Link>
-          <Link
-            to="/login"
+            Where Lonely Socks Find Their Match
+          </h1>
+
+          <p
             style={{
-              display: "block",
-              width: "100%",
-              padding: "14px",
-              backgroundColor: "#fff",
-              color: "#0070f3",
-              textDecoration: "none",
-              borderRadius: "8px",
-              fontWeight: "bold",
-              fontSize: "16px",
-              border: "1px solid #0070f3",
+              fontSize: "15px",
+              color: "#6b7280",
+              lineHeight: "1.65",
+              margin: "0 0 36px",
             }}
           >
-            Log In
-          </Link>
+            Lost a single sock in the laundry? Don't throw it away. Upload its profile, swipe for potential twins, and coordinate a reunion with its owner.
+          </p>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+            <Link
+              to="/signup"
+              style={{
+                display: "block",
+                padding: "14px",
+                backgroundColor: "#0070f3",
+                color: "#fff",
+                borderRadius: "10px",
+                fontWeight: 700,
+                fontSize: "15px",
+                letterSpacing: "0.2px",
+                boxShadow: "0 4px 14px rgba(0,112,243,0.35)",
+                transition: "box-shadow 0.2s, filter 0.2s",
+              }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.filter = "brightness(1.08)"; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.filter = ""; }}
+            >
+              Get Started — It's Free
+            </Link>
+            <Link
+              to="/login"
+              style={{
+                display: "block",
+                padding: "14px",
+                backgroundColor: "#fff",
+                color: "#0070f3",
+                borderRadius: "10px",
+                fontWeight: 600,
+                fontSize: "15px",
+                border: "1.5px solid #c7dfff",
+              }}
+            >
+              Log In
+            </Link>
+          </div>
         </div>
+
+        <p style={{ marginTop: "32px", fontSize: "13px", color: "#9ca3af" }}>
+          Reuniting socks, one pair at a time.
+        </p>
       </main>
-      {/* <Footer /> */}
     </div>
   );
 }

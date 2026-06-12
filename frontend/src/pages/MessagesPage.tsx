@@ -1,17 +1,10 @@
-// Messages/chat hub page
-// Should include:
-// - ConversationList on left side
-// - ChatWindow on right side (or full screen on mobile)
-// - Layout for conversations
-// - Responsive design
-// - Empty state when no conversations
-
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useSocket } from "../context/SocketContext";
 import { useAuth } from "../context/AuthContext";
 import { Conversation, Message } from "../types";
 import { LiaSocksSolid } from "react-icons/lia";
-import { getImageUrl } from "../services/api";
+import { IoSend } from "react-icons/io5";
+import { getImageUrl, BASE_URL } from "../services/api";
 
 export default function Messages() {
   const socket = useSocket();
@@ -21,15 +14,17 @@ export default function Messages() {
   const [activeMatchId, setActiveMatchId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [text, setText] = useState("");
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Load conversations from the API
+  const scrollToBottom = () => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  useEffect(scrollToBottom, [messages]);
+
   useEffect(() => {
     const fetchConversations = async () => {
       try {
-        const res = await fetch('http://localhost:5000/api/messages/conversations', { credentials: 'include' });
+        const res = await fetch(`${BASE_URL}/messages/conversations`, { credentials: "include" });
         if (!res.ok) return;
         const data = await res.json();
-        // _id is always present; user.id is only set after login (not after getMe refresh)
         const userId = (user as any)?._id || user?.id;
         const convs: Conversation[] = (data || []).map((item: any) => {
           const match = item.match;
@@ -37,85 +32,51 @@ export default function Messages() {
           const u2 = match.user2Id;
           const isU1 = u1._id === userId;
           const otherUser = isU1 ? u2 : u1;
-          // sock1Id belongs to user1, sock2Id belongs to user2
           const otherSock = isU1 ? match.sock2Id : match.sock1Id;
           return {
             matchId: match._id,
-            otherUser: {
-              id: otherUser._id || otherUser.id,
-              username: otherUser.username,
-              profilePicture: otherUser.profilePicture,
-            },
+            otherUser: { id: otherUser._id || otherUser.id, username: otherUser.username, profilePicture: otherUser.profilePicture },
             sockImage: otherSock?.images?.[0],
             lastMessage: item.lastMessage?.messageText,
           };
         });
         setConversations(convs);
-      } catch (error) {
-        console.error("Failed to fetch conversations:", error);
+      } catch {
+        console.error("Failed to fetch conversations");
       }
     };
     fetchConversations();
-
-    // // dummy conversation
-    // const dummyConversations: Conversation[] = [
-    //   {
-    //     matchId: "match_1",
-    //     otherUser: {
-    //       id: "userA",
-    //       username: "Carlos",
-    //       profilePicture:
-    //         "https://images.unsplash.com/photo-1582966772680-860e372bb558?w=100",
-    //     },
-    //   },
-    //   {
-    //     matchId: "match_2",
-    //     otherUser: {
-    //       id: "userB",
-    //       username: "Diana",
-    //       profilePicture:
-    //         "https://images.unsplash.com/photo-1586350977771-b3b0abd50c82?w=100",
-    //     },
-    //   },
-    // ];
-    // setConversations(dummyConversations);
   }, [user?.id]);
 
-  // Load messages from API and set up socket room when a conversation is selected
   useEffect(() => {
     if (!activeMatchId) return;
 
     const fetchMessages = async () => {
       try {
-        const res = await fetch(`http://localhost:5000/api/messages/${activeMatchId}`, { credentials: 'include' });
+        const res = await fetch(`${BASE_URL}/messages/${activeMatchId}`, { credentials: "include" });
         if (!res.ok) return;
         const data = await res.json();
-        const msgs: Message[] = (data.messages || []).map((msg: any) => ({
-          id: msg._id,
-          senderId: msg.senderId?._id || msg.senderId,
-          receiverId: msg.receiverId?._id || msg.receiverId,
-          matchId: msg.matchId,
-          messageText: msg.messageText,
-          createdAt: msg.createdAt,
-        }));
-        setMessages(msgs);
-      } catch (error) {
-        console.error("Failed to fetch messages:", error);
+        setMessages(
+          (data.messages || []).map((msg: any) => ({
+            id: msg._id,
+            senderId: msg.senderId?._id || msg.senderId,
+            receiverId: msg.receiverId?._id || msg.receiverId,
+            matchId: msg.matchId,
+            messageText: msg.messageText,
+            createdAt: msg.createdAt,
+          }))
+        );
+      } catch {
+        console.error("Failed to fetch messages");
       }
     };
     fetchMessages();
 
-    // // dummy messages
-    // const dummyMessages: Message[] = [ ... ];
-    // setMessages(dummyMessages);
-
     if (socket) {
-      // Backend room name is "match-{matchId}", joined via "join-match" event
       socket.emit("join-match", activeMatchId);
       socket.on("receive-message", (newMessage: Message) => {
         if (newMessage.matchId === activeMatchId) {
           setMessages((prev) => {
-            // Avoid duplicate if server echoes back our own sent message
             if (prev.some((m) => m.id === newMessage.id)) return prev;
             return [...prev, newMessage];
           });
@@ -124,29 +85,22 @@ export default function Messages() {
     }
 
     return () => {
-      if (socket) {
-        socket.emit("leave-match", activeMatchId);
-        socket.off("receive-message");
-      }
+      if (socket) { socket.emit("leave-match", activeMatchId); socket.off("receive-message"); }
     };
   }, [activeMatchId, socket]);
 
-  // Send message — saves to DB via REST API and emits via socket for real-time delivery
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!text.trim() || !activeMatchId) return;
-
     const messageText = text;
     setText("");
-
     try {
-      const res = await fetch('http://localhost:5000/api/messages', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const res = await fetch(`${BASE_URL}/messages`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ matchId: activeMatchId, messageText }),
-        credentials: 'include',
+        credentials: "include",
       });
-
       if (res.ok) {
         const { data: msg } = await res.json();
         const newMessage: Message = {
@@ -158,155 +112,128 @@ export default function Messages() {
           createdAt: msg.createdAt,
         };
         setMessages((prev) => [...prev, newMessage]);
-
-        if (socket) {
-          socket.emit("send-message", newMessage);
-        }
+        if (socket) socket.emit("send-message", newMessage);
       }
-    } catch (error) {
-      console.error("Failed to send message:", error);
+    } catch {
       setText(messageText);
     }
   };
 
-  const activeConversation = conversations.find(
-    (c) => c.matchId === activeMatchId,
-  );
+  const currentUserId = (user as any)?._id || user?.id;
+  const activeConversation = conversations.find((c) => c.matchId === activeMatchId);
 
   return (
     <div
       style={{
         display: "flex",
-        maxWidth: "800px",
-        margin: "40px auto",
-        height: "500px",
-        border: "1px solid #ccc",
-        borderRadius: "8px",
-        overflow: "hidden",
+        maxWidth: "820px",
+        margin: "24px auto",
+        padding: "0 16px",
+        height: "calc(100vh - 160px)",
+        minHeight: "480px",
+        gap: "0",
       }}
     >
-      {/* Left colum */}
+      {/* Sidebar */}
       <div
         style={{
-          width: "35%",
-          borderRight: "1px solid #ccc",
-          backgroundColor: "#f9f9f9",
-          overflowY: "auto",
-        }}
-      >
-        <h3
-          style={{ padding: "15px", margin: 0, borderBottom: "1px solid #eee" }}
-        >
-          Chats
-        </h3>
-        {conversations.map((conv) => (
-          <div
-            key={conv.matchId}
-            onClick={() => setActiveMatchId(conv.matchId)}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "10px",
-              padding: "15px",
-              cursor: "pointer",
-              backgroundColor:
-                activeMatchId === conv.matchId ? "#e0f2fe" : "transparent",
-              borderBottom: "1px solid #eee",
-            }}
-          >
-            <img
-              src={getImageUrl(conv.sockImage) || conv.otherUser.profilePicture || ""}
-              alt=""
-              style={{
-                width: "40px",
-                height: "40px",
-                borderRadius: "8px",
-                objectFit: "cover",
-              }}
-            />
-            <div style={{ overflow: "hidden" }}>
-              <h4 style={{ margin: 0, fontSize: "14px" }}>
-                {conv.otherUser.username}
-              </h4>
-              <p
-                style={{
-                  margin: 0,
-                  fontSize: "12px",
-                  color: "#666",
-                  whiteSpace: "nowrap",
-                  textOverflow: "ellipsis",
-                  overflow: "hidden",
-                }}
-              >
-                {conv.lastMessage}
-              </p>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* right colum */}
-      <div
-        style={{
-          width: "70%",
+          width: "280px",
+          flexShrink: 0,
+          background: "#fff",
+          borderRadius: "16px 0 0 16px",
+          borderRight: "1px solid #f0f0f0",
           display: "flex",
           flexDirection: "column",
-          backgroundColor: "#fff",
+          overflow: "hidden",
+          boxShadow: "0 1px 3px rgba(0,0,0,0.06), 0 8px 24px rgba(0,0,0,0.06)",
+        }}
+      >
+        <div style={{ padding: "16px 16px 12px", borderBottom: "1px solid #f0f0f0" }}>
+          <h3 style={{ fontSize: "16px", fontWeight: 700 }}>Chats</h3>
+        </div>
+
+        <div style={{ overflowY: "auto", flexGrow: 1 }}>
+          {conversations.length === 0 && (
+            <div style={{ padding: "32px 16px", textAlign: "center", color: "#9ca3af", fontSize: "13px" }}>
+              No matches yet. Start swiping!
+            </div>
+          )}
+          {conversations.map((conv) => (
+            <div
+              key={conv.matchId}
+              onClick={() => setActiveMatchId(conv.matchId)}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "10px",
+                padding: "12px 14px",
+                cursor: "pointer",
+                backgroundColor: activeMatchId === conv.matchId ? "#eff6ff" : "transparent",
+                borderLeft: activeMatchId === conv.matchId ? "3px solid #0070f3" : "3px solid transparent",
+                transition: "background 0.15s",
+              }}
+              onMouseEnter={(e) => { if (activeMatchId !== conv.matchId) (e.currentTarget as HTMLDivElement).style.background = "#f9fafb"; }}
+              onMouseLeave={(e) => { if (activeMatchId !== conv.matchId) (e.currentTarget as HTMLDivElement).style.background = "transparent"; }}
+            >
+              <img
+                src={getImageUrl(conv.sockImage) || conv.otherUser.profilePicture || ""}
+                alt=""
+                style={{ width: "42px", height: "42px", borderRadius: "10px", objectFit: "cover", flexShrink: 0, border: "1.5px solid #e5e7eb" }}
+              />
+              <div style={{ overflow: "hidden" }}>
+                <div style={{ fontSize: "14px", fontWeight: 600, color: "#111827" }}>{conv.otherUser.username}</div>
+                <div style={{ fontSize: "12px", color: "#9ca3af", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                  {conv.lastMessage || "Say hello!"}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Chat area */}
+      <div
+        style={{
+          flex: 1,
+          display: "flex",
+          flexDirection: "column",
+          background: "#fff",
+          borderRadius: "0 16px 16px 0",
+          overflow: "hidden",
+          boxShadow: "0 1px 3px rgba(0,0,0,0.06), 0 8px 24px rgba(0,0,0,0.06)",
         }}
       >
         {activeMatchId && activeConversation ? (
           <>
-            <div
-              style={{
-                padding: "15px",
-                borderBottom: "1px solid #eee",
-                fontWeight: "bold",
-                display: "flex",
-                alignItems: "center",
-                gap: "10px",
-              }}
-            >
+            {/* Header */}
+            <div style={{ padding: "14px 18px", borderBottom: "1px solid #f0f0f0", display: "flex", alignItems: "center", gap: "10px" }}>
               <img
                 src={getImageUrl(activeConversation.sockImage) || activeConversation.otherUser.profilePicture || ""}
                 alt=""
-                style={{
-                  width: "30px",
-                  height: "30px",
-                  borderRadius: "50%",
-                  objectFit: "cover",
-                }}
+                style={{ width: "36px", height: "36px", borderRadius: "8px", objectFit: "cover", border: "1.5px solid #e5e7eb" }}
               />
-              {activeConversation.otherUser.username}
+              <div>
+                <div style={{ fontSize: "15px", fontWeight: 700 }}>{activeConversation.otherUser.username}</div>
+                <div style={{ fontSize: "12px", color: "#10b981", fontWeight: 500 }}>Matched</div>
+              </div>
             </div>
 
-            {/* message area */}
-            <div
-              style={{
-                flexGrow: 1,
-                padding: "15px",
-                overflowY: "auto",
-                display: "flex",
-                flexDirection: "column",
-                gap: "10px",
-              }}
-            >
+            {/* Messages */}
+            <div style={{ flex: 1, padding: "16px", overflowY: "auto", display: "flex", flexDirection: "column", gap: "8px", background: "#f9fafb" }}>
               {messages.map((msg) => {
-                const isMe = msg.senderId === ((user as any)?._id || user?.id);
+                const isMe = msg.senderId === currentUserId;
                 return (
-                  <div
-                    key={msg.id}
-                    style={{
-                      alignSelf: isMe ? "flex-end" : "flex-start",
-                      maxWidth: "70%",
-                    }}
-                  >
+                  <div key={msg.id} style={{ display: "flex", justifyContent: isMe ? "flex-end" : "flex-start" }}>
                     <div
                       style={{
+                        maxWidth: "68%",
                         padding: "10px 14px",
-                        borderRadius: "15px",
+                        borderRadius: isMe ? "16px 16px 4px 16px" : "16px 16px 16px 4px",
                         fontSize: "14px",
-                        backgroundColor: isMe ? "#0070f3" : "#e5e7eb",
-                        color: isMe ? "#fff" : "#000",
+                        lineHeight: "1.45",
+                        backgroundColor: isMe ? "#0070f3" : "#fff",
+                        color: isMe ? "#fff" : "#111827",
+                        boxShadow: isMe ? "0 2px 8px rgba(0,112,243,0.25)" : "0 1px 3px rgba(0,0,0,0.08)",
                       }}
                     >
                       {msg.messageText}
@@ -314,57 +241,45 @@ export default function Messages() {
                   </div>
                 );
               })}
+              <div ref={messagesEndRef} />
             </div>
 
-            {/* message form */}
+            {/* Input */}
             <form
               onSubmit={handleSend}
-              style={{
-                padding: "15px",
-                borderTop: "1px solid #eee",
-                display: "flex",
-                gap: "10px",
-              }}
+              style={{ padding: "12px 16px", borderTop: "1px solid #f0f0f0", display: "flex", gap: "10px", alignItems: "center", background: "#fff" }}
             >
               <input
                 type="text"
                 value={text}
                 onChange={(e) => setText(e.target.value)}
                 placeholder="Type a message..."
-                style={{
-                  flexGrow: 1,
-                  padding: "10px",
-                  borderRadius: "4px",
-                  border: "1px solid #ccc",
-                }}
+                style={{ flex: 1, borderRadius: "50px", padding: "10px 16px", fontSize: "14px" }}
               />
               <button
                 type="submit"
                 style={{
-                  padding: "10px 20px",
+                  width: "40px",
+                  height: "40px",
+                  flexShrink: 0,
                   backgroundColor: "#0070f3",
                   color: "#fff",
                   border: "none",
-                  borderRadius: "4px",
-                  cursor: "pointer",
-                  fontWeight: "bold",
+                  borderRadius: "50%",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  boxShadow: "0 2px 8px rgba(0,112,243,0.3)",
                 }}
               >
-                Send
+                <IoSend style={{ fontSize: "16px" }} />
               </button>
             </form>
           </>
         ) : (
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "center",
-              alignItems: "center",
-              height: "100%",
-              color: "#888",
-            }}
-          >
-            Select a conversation to start chatting! <LiaSocksSolid />
+          <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", color: "#9ca3af", gap: "12px" }}>
+            <LiaSocksSolid style={{ fontSize: "40px", opacity: 0.4 }} />
+            <p style={{ fontSize: "14px" }}>Select a conversation to start chatting</p>
           </div>
         )}
       </div>

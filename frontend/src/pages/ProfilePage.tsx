@@ -13,7 +13,7 @@ import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { LiaSocksSolid } from "react-icons/lia";
 import { BsThreeDotsVertical } from "react-icons/bs";
-import { getImageUrl } from "../services/api";
+import { getImageUrl, BASE_URL } from "../services/api";
 
 interface ConfirmModalState {
   isOpen: boolean;
@@ -70,7 +70,7 @@ export default function Profile() {
 
   const fetchMySocks = async () => {
     try {
-      const res = await fetch('http://localhost:5000/api/socks/my-socks', { credentials: 'include' });
+      const res = await fetch(`${BASE_URL}/socks/my-socks`, { credentials: 'include' });
       const data = await res.json();
       setMySocks(Array.isArray(data) ? data : []);
     } catch (error) {
@@ -82,7 +82,7 @@ export default function Profile() {
 
   const fetchMatches = async () => {
     try {
-      const res = await fetch('http://localhost:5000/api/matches', { credentials: 'include' });
+      const res = await fetch(`${BASE_URL}/matches`, { credentials: 'include' });
       const data = await res.json();
       setMatches(Array.isArray(data) ? data : []);
     } catch (error) {
@@ -97,7 +97,7 @@ export default function Profile() {
 
   const handleAccept = async (matchId: string) => {
     try {
-      const res = await fetch(`http://localhost:5000/api/matches/${matchId}/accept`, {
+      const res = await fetch(`${BASE_URL}/matches/${matchId}/accept`, {
         method: 'PUT',
         credentials: 'include',
       });
@@ -116,7 +116,7 @@ export default function Profile() {
 
   const handleReject = async (matchId: string) => {
     try {
-      const res = await fetch(`http://localhost:5000/api/matches/${matchId}/reject`, {
+      const res = await fetch(`${BASE_URL}/matches/${matchId}/reject`, {
         method: 'PUT',
         credentials: 'include',
       });
@@ -140,7 +140,7 @@ export default function Profile() {
       message: "Are you sure you want to delete this sock ?",
       onConfirm: async () => {
         try {
-          const res = await fetch(`http://localhost:5000/api/socks/${sockId}`, {
+          const res = await fetch(`${BASE_URL}/socks/${sockId}`, {
             method: 'DELETE',
             credentials: 'include',
           });
@@ -213,13 +213,13 @@ export default function Profile() {
         formData.append('material', editMaterial);
         formData.append('description', editDescription);
         formData.append('images', editImageFile);
-        res = await fetch(`http://localhost:5000/api/socks/${sockId}`, {
+        res = await fetch(`${BASE_URL}/socks/${sockId}`, {
           method: 'PUT',
           body: formData,
           credentials: 'include',
         });
       } else {
-        res = await fetch(`http://localhost:5000/api/socks/${sockId}`, {
+        res = await fetch(`${BASE_URL}/socks/${sockId}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ color: editColor, pattern: editPattern, size: editSize, material: editMaterial, description: editDescription }),
@@ -254,104 +254,110 @@ export default function Profile() {
   //   }
   // };
 
+  const card: React.CSSProperties = {
+    background: "#fff",
+    borderRadius: "16px",
+    padding: "20px 20px",
+    boxShadow: "0 1px 3px rgba(0,0,0,0.06), 0 8px 24px rgba(0,0,0,0.06)",
+    marginBottom: "20px",
+  };
+
+  const sectionLabel: React.CSSProperties = {
+    fontSize: "13px",
+    fontWeight: 700,
+    textTransform: "uppercase" as const,
+    letterSpacing: "0.6px",
+    color: "#9ca3af",
+    marginBottom: "14px",
+    display: "flex",
+    alignItems: "center",
+    gap: "6px",
+  };
+
   return (
-    <div style={{ maxWidth: "600px", margin: "40px auto", padding: "20px" }}>
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: "20px",
-          borderBottom: "1px solid #eee",
-          paddingBottom: "20px",
-          marginBottom: "20px",
-        }}
-      >
-        {displayUser?.profilePicture && (
-          <img
-            src={displayUser.profilePicture}
-            alt="Profile"
-            style={{
-              width: "80px",
-              height: "80px",
-              borderRadius: "50%",
-              objectFit: "cover",
-            }}
-          />
-        )}
-        <div style={{ flexGrow: 1 }}>
-          <h2 style={{ margin: 0 }}>{displayUser?.username}</h2>
-          <p style={{ color: "#666", margin: "5px 0 0 0" }}>
-            {displayUser?.email}
-          </p>
-          {displayUser?.bio && (
-            <p style={{ marginTop: "10px", fontSize: "14px", fontStyle: "italic" }}>
-              {displayUser.bio}
-            </p>
+    <div style={{ maxWidth: "620px", margin: "28px auto", padding: "0 16px 32px" }}>
+
+      {/* Profile card */}
+      <div style={card}>
+        <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+          {displayUser?.profilePicture ? (
+            <img
+              src={displayUser.profilePicture}
+              alt="Profile"
+              style={{ width: "72px", height: "72px", borderRadius: "50%", objectFit: "cover", border: "3px solid #e8f2ff", flexShrink: 0 }}
+            />
+          ) : (
+            <div style={{ width: "72px", height: "72px", borderRadius: "50%", background: "#e8f2ff", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              <span style={{ fontSize: "28px", color: "#0070f3" }}>🧦</span>
+            </div>
           )}
+          <div style={{ flexGrow: 1, minWidth: 0 }}>
+            <h2 style={{ fontSize: "20px", fontWeight: 800, marginBottom: "2px" }}>{displayUser?.username}</h2>
+            <p style={{ fontSize: "13px", color: "#6b7280", marginBottom: "4px" }}>{displayUser?.email}</p>
+            {displayUser?.bio && (
+              <p style={{ fontSize: "13px", color: "#4b5563", fontStyle: "italic" }}>{displayUser.bio}</p>
+            )}
+          </div>
+          <button
+            onClick={triggerLogoutConfirm}
+            style={{
+              padding: "8px 14px",
+              backgroundColor: "#fff0f0",
+              color: "#ef4444",
+              border: "1.5px solid #fecaca",
+              borderRadius: "8px",
+              fontSize: "13px",
+              fontWeight: 600,
+              flexShrink: 0,
+              alignSelf: "flex-start",
+            }}
+          >
+            Logout
+          </button>
         </div>
-        <button
-          onClick={triggerLogoutConfirm}
-          style={{
-            padding: "8px 12px",
-            backgroundColor: "#ef4444",
-            color: "#fff",
-            border: "none",
-            borderRadius: "4px",
-            cursor: "pointer",
-            alignSelf: "flex-start",
-          }}
-        >
-          Logout
-        </button>
       </div>
 
       {/* My sock list */}
-      <h3>
-        <LiaSocksSolid /> My sock list <LiaSocksSolid />
-      </h3>
-      {loading ? (
-        <p>Loading your closet...</p>
-      ) : mySocks.length === 0 ? (
-        <p style={{ color: "#888" }}>You haven't uploaded any socks yet.</p>
-      ) : (
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "1fr 1fr",
-            gap: "15px",
-          }}
-        >
+      <div style={card}>
+        <p style={sectionLabel}><LiaSocksSolid /> My Socks</p>
+        {loading ? (
+          <p style={{ color: "#9ca3af", fontSize: "14px" }}>Loading your closet...</p>
+        ) : mySocks.length === 0 ? (
+          <p style={{ color: "#9ca3af", fontSize: "14px" }}>You haven't uploaded any socks yet.</p>
+        ) : (
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
           {mySocks.map((sock) => (
             <div
               key={getSockId(sock)}
               style={{
-                border: "1px solid #ccc",
-                borderRadius: "8px",
+                border: "1.5px solid #f0f0f0",
+                borderRadius: "12px",
                 overflow: "hidden",
                 position: "relative",
+                boxShadow: "0 1px 4px rgba(0,0,0,0.05)",
               }}
             >
               <img
                 src={getImageUrl(sock.images[0])}
                 alt="My Sock"
-                style={{ width: "100%", height: "150px", objectFit: "cover" }}
+                style={{ width: "100%", height: "150px", objectFit: "cover", display: "block" }}
               />
 
               <span
                 style={{
                   position: "absolute",
-                  bottom: "8px",
-                  right: "8px",
-                  padding: "4px 8px",
-                  borderRadius: "4px",
-                  fontSize: "12px",
-                  fontWeight: "bold",
+                  bottom: "52px",
+                  left: "8px",
+                  padding: "3px 8px",
+                  borderRadius: "20px",
+                  fontSize: "11px",
+                  fontWeight: 700,
                   color: "#fff",
-                  backgroundColor:
-                    sock.status === "matched" ? "#10b981" : "#f59e0b",
+                  backgroundColor: sock.status === "matched" ? "#10b981" : "#f59e0b",
+                  boxShadow: "0 1px 4px rgba(0,0,0,0.2)",
                 }}
               >
-                {sock.status === "matched" ? "Matched!" : "Lonely"}
+                {sock.status === "matched" ? "Matched" : "Available"}
               </span>
 
               <button
@@ -364,16 +370,17 @@ export default function Profile() {
                   position: "absolute",
                   top: "8px",
                   right: "8px",
-                  background: "rgba(255,255,255,0.8)",
+                  background: "rgba(255,255,255,0.9)",
                   border: "none",
                   borderRadius: "50%",
-                  width: "28px",
-                  height: "28px",
+                  width: "30px",
+                  height: "30px",
                   display: "flex",
                   justifyContent: "center",
                   alignItems: "center",
                   cursor: "pointer",
                   zIndex: 10,
+                  boxShadow: "0 1px 4px rgba(0,0,0,0.15)",
                 }}
               >
                 <BsThreeDotsVertical />
@@ -383,105 +390,79 @@ export default function Profile() {
                 <div
                   style={{
                     position: "absolute",
-                    top: "40px",
+                    top: "42px",
                     right: "8px",
                     backgroundColor: "#fff",
-                    border: "1px solid #ccc",
-                    borderRadius: "4px",
-                    boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+                    border: "1.5px solid #f0f0f0",
+                    borderRadius: "10px",
+                    boxShadow: "0 4px 16px rgba(0,0,0,0.12)",
                     zIndex: 20,
-                    display: "flex",
-                    flexDirection: "column",
+                    overflow: "hidden",
+                    minWidth: "110px",
                   }}
                 >
                   <button
                     onClick={() => openEditModal(sock)}
-                    style={{
-                      padding: "8px 16px",
-                      background: "none",
-                      border: "none",
-                      cursor: "pointer",
-                      textAlign: "left",
-                      fontSize: "14px",
-                    }}
-                    onMouseEnter={(e) =>
-                      (e.currentTarget.style.backgroundColor = "#f5f5f5")
-                    }
-                    onMouseLeave={(e) =>
-                      (e.currentTarget.style.backgroundColor = "transparent")
-                    }
+                    style={{ padding: "10px 14px", background: "none", border: "none", cursor: "pointer", textAlign: "left", fontSize: "13px", fontWeight: 500, width: "100%", display: "block" }}
+                    onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#f4f6f9")}
+                    onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
                   >
                     Edit
                   </button>
                   <button
                     onClick={() => triggerDeleteConfirm(getSockId(sock))}
-                    style={{
-                      padding: "8px 16px",
-                      background: "none",
-                      border: "none",
-                      cursor: "pointer",
-                      textAlign: "left",
-                      fontSize: "14px",
-                      color: "#ef4444",
-                    }}
-                    onMouseEnter={(e) =>
-                      (e.currentTarget.style.backgroundColor = "#f5f5f5")
-                    }
-                    onMouseLeave={(e) =>
-                      (e.currentTarget.style.backgroundColor = "transparent")
-                    }
+                    style={{ padding: "10px 14px", background: "none", border: "none", cursor: "pointer", textAlign: "left", fontSize: "13px", fontWeight: 500, color: "#ef4444", width: "100%", display: "block" }}
+                    onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#fff5f5")}
+                    onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
                   >
                     Delete
                   </button>
                 </div>
               )}
 
-              <div style={{ padding: "10px" }}>
-                <h4 style={{ margin: "0 0 5px 0" }}>
+              <div style={{ padding: "8px 10px" }}>
+                <div style={{ fontSize: "13px", fontWeight: 600, color: "#111827", marginBottom: "2px" }}>
                   {sock.color} {sock.pattern}
-                </h4>
-                <p style={{ margin: 0, fontSize: "12px", color: "#666" }}>
-                  Size: {sock.size} | {sock.material}
-                </p>
+                </div>
+                <div style={{ fontSize: "11px", color: "#9ca3af" }}>
+                  {sock.size} · {sock.material}
+                </div>
               </div>
             </div>
           ))}
         </div>
       )}
+      </div>
 
-      {/* Match Requests */}
-      <h3 style={{ marginTop: "30px" }}>
-        Match Requests
-      </h3>
-      {matchesLoading ? (
-        <p>Loading matches...</p>
-      ) : matches.filter((m) => m.status !== "rejected").length === 0 ? (
-        <p style={{ color: "#888" }}>No match requests yet. Go discover some socks!</p>
-      ) : (
-        <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-          {matches
-            .filter((m) => m.status !== "rejected")
-            .map((match) => {
-              const currentUserId = user?.id || (user as any)?._id;
-              const isRequester =
-                match.user1Id._id === currentUserId ||
-                (match.user1Id as any)?.id === currentUserId;
-              const otherUser = isRequester ? match.user2Id : match.user1Id;
-              const mySock = isRequester ? match.sock1Id : match.sock2Id;
-              const theirSock = isRequester ? match.sock2Id : match.sock1Id;
+      {/* Match Requests card */}
+      <div style={card}>
+        <p style={sectionLabel}>Match Requests</p>
+        {matchesLoading ? (
+          <p style={{ color: "#9ca3af", fontSize: "14px" }}>Loading matches...</p>
+        ) : matches.filter((m) => m.status !== "rejected").length === 0 ? (
+          <p style={{ color: "#9ca3af", fontSize: "14px" }}>No match requests yet. Go discover some socks!</p>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+            {matches
+              .filter((m) => m.status !== "rejected")
+              .map((match) => {
+                const currentUserId = user?.id || (user as any)?._id;
+                const isRequester =
+                  match.user1Id._id === currentUserId ||
+                  (match.user1Id as any)?.id === currentUserId;
+                const otherUser = isRequester ? match.user2Id : match.user1Id;
+                const mySock = isRequester ? match.sock1Id : match.sock2Id;
+                const theirSock = isRequester ? match.sock2Id : match.sock1Id;
 
-              return (
-                <div
-                  key={match._id}
-                  style={{
-                    border: "1px solid #e5e7eb",
-                    borderRadius: "12px",
-                    padding: "15px",
-                    backgroundColor: match.status === "accepted" ? "#f0fdf4" : "#fafafa",
-                  }}
-                >
+                return (
                   <div
+                    key={match._id}
                     style={{
+                      border: "1.5px solid",
+                      borderColor: match.status === "accepted" ? "#a7f3d0" : "#f0f0f0",
+                      borderRadius: "12px",
+                      padding: "12px 14px",
+                      backgroundColor: match.status === "accepted" ? "#f0fdf4" : "#fafafa",
                       display: "flex",
                       alignItems: "center",
                       gap: "12px",
@@ -492,74 +473,43 @@ export default function Profile() {
                       <img
                         src={getImageUrl(mySock?.images?.[0])}
                         alt="My sock"
-                        style={{
-                          width: "60px",
-                          height: "60px",
-                          borderRadius: "8px",
-                          objectFit: "cover",
-                          display: "block",
-                        }}
+                        style={{ width: "52px", height: "52px", borderRadius: "8px", objectFit: "cover", display: "block" }}
                       />
-                      <span style={{ fontSize: "11px", color: "#666" }}>Yours</span>
+                      <span style={{ fontSize: "10px", color: "#9ca3af", fontWeight: 600 }}>Yours</span>
                     </div>
 
-                    <span style={{ fontSize: "18px", color: "#ef4444" }}>♥</span>
+                    <span style={{ fontSize: "16px", color: "#ef4444" }}>♥</span>
 
                     <div style={{ textAlign: "center" }}>
                       <img
                         src={getImageUrl(theirSock?.images?.[0])}
                         alt="Their sock"
-                        style={{
-                          width: "60px",
-                          height: "60px",
-                          borderRadius: "8px",
-                          objectFit: "cover",
-                          display: "block",
-                        }}
+                        style={{ width: "52px", height: "52px", borderRadius: "8px", objectFit: "cover", display: "block" }}
                       />
-                      <span style={{ fontSize: "11px", color: "#666" }}>
-                        {otherUser?.username}'s
-                      </span>
+                      <span style={{ fontSize: "10px", color: "#9ca3af", fontWeight: 600 }}>{otherUser?.username}'s</span>
                     </div>
 
-                    <div style={{ marginLeft: "auto" }}>
+                    <div style={{ marginLeft: "auto", textAlign: "right" }}>
                       {match.status === "pending" && isRequester && (
-                        <span style={{ fontSize: "13px", color: "#f59e0b", fontStyle: "italic" }}>
+                        <span style={{ fontSize: "12px", color: "#f59e0b", fontWeight: 600, fontStyle: "italic" }}>
                           Waiting for {otherUser?.username}...
                         </span>
                       )}
                       {match.status === "pending" && !isRequester && (
-                        <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                          <p style={{ margin: 0, fontSize: "13px", fontWeight: "bold" }}>
+                        <div style={{ display: "flex", flexDirection: "column", gap: "6px", alignItems: "flex-end" }}>
+                          <span style={{ fontSize: "12px", fontWeight: 700, color: "#374151" }}>
                             {otherUser?.username} wants to match!
-                          </p>
-                          <div style={{ display: "flex", gap: "8px" }}>
+                          </span>
+                          <div style={{ display: "flex", gap: "6px" }}>
                             <button
                               onClick={() => handleAccept(match._id)}
-                              style={{
-                                padding: "6px 14px",
-                                backgroundColor: "#10b981",
-                                color: "#fff",
-                                border: "none",
-                                borderRadius: "6px",
-                                cursor: "pointer",
-                                fontSize: "13px",
-                                fontWeight: "bold",
-                              }}
+                              style={{ padding: "6px 14px", backgroundColor: "#10b981", color: "#fff", border: "none", borderRadius: "20px", cursor: "pointer", fontSize: "12px", fontWeight: 700 }}
                             >
                               Accept
                             </button>
                             <button
                               onClick={() => handleReject(match._id)}
-                              style={{
-                                padding: "6px 14px",
-                                backgroundColor: "#ef4444",
-                                color: "#fff",
-                                border: "none",
-                                borderRadius: "6px",
-                                cursor: "pointer",
-                                fontSize: "13px",
-                              }}
+                              style={{ padding: "6px 14px", backgroundColor: "#fff", color: "#ef4444", border: "1.5px solid #fecaca", borderRadius: "20px", cursor: "pointer", fontSize: "12px", fontWeight: 700 }}
                             >
                               Reject
                             </button>
@@ -567,21 +517,11 @@ export default function Profile() {
                         </div>
                       )}
                       {match.status === "accepted" && (
-                        <div style={{ textAlign: "center" }}>
-                          <p style={{ margin: "0 0 6px", fontSize: "13px", color: "#10b981", fontWeight: "bold" }}>
-                            Matched!
-                          </p>
+                        <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "4px" }}>
+                          <span style={{ fontSize: "12px", color: "#10b981", fontWeight: 700 }}>Matched!</span>
                           <button
                             onClick={() => navigate("/messages")}
-                            style={{
-                              padding: "6px 14px",
-                              backgroundColor: "#0070f3",
-                              color: "#fff",
-                              border: "none",
-                              borderRadius: "6px",
-                              cursor: "pointer",
-                              fontSize: "13px",
-                            }}
+                            style={{ padding: "6px 14px", backgroundColor: "#0070f3", color: "#fff", border: "none", borderRadius: "20px", cursor: "pointer", fontSize: "12px", fontWeight: 700, boxShadow: "0 2px 8px rgba(0,112,243,0.25)" }}
                           >
                             Go to Chat
                           </button>
@@ -589,214 +529,107 @@ export default function Profile() {
                       )}
                     </div>
                   </div>
-                </div>
-              );
-            })}
-        </div>
-      )}
+                );
+              })}
+          </div>
+        )}
+      </div>
 
       {editingSock && (
         <div
           style={{
             position: "fixed",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: "rgba(0,0,0,0.5)",
+            inset: 0,
+            backgroundColor: "rgba(0,0,0,0.45)",
             display: "flex",
             justifyContent: "center",
             alignItems: "center",
             zIndex: 1000,
+            padding: "20px",
           }}
         >
           <form
             onSubmit={handleSaveEdit}
             style={{
               backgroundColor: "#fff",
-              padding: "20px",
-              borderRadius: "8px",
-              width: "90%",
+              padding: "24px",
+              borderRadius: "16px",
+              width: "100%",
               maxWidth: "400px",
               display: "flex",
               flexDirection: "column",
-              gap: "12px",
+              gap: "14px",
+              boxShadow: "0 8px 40px rgba(0,0,0,0.18)",
+              maxHeight: "90vh",
+              overflowY: "auto",
             }}
           >
-            <h3 style={{ margin: "0 0 10px 0" }}>Edit Sock Info 🧦</h3>
+            <h3 style={{ fontSize: "17px", fontWeight: 800, marginBottom: "2px" }}>Edit Sock</h3>
 
-            {/* Image preview — shows new selection or current image */}
             <img
               src={editImagePreview || getImageUrl(editingSock.images?.[0])}
               alt="Sock"
               style={{
                 width: "100%",
-                height: "140px",
+                height: "160px",
                 objectFit: "cover",
-                borderRadius: "6px",
+                borderRadius: "10px",
                 display: editImagePreview || editingSock.images?.[0] ? "block" : "none",
               }}
             />
             <div>
-              <label style={{ display: "block", marginBottom: "4px", fontSize: "14px" }}>
-                Replace Image
-              </label>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleEditImageChange}
-                style={{ width: "100%", fontSize: "13px" }}
-              />
+              <label style={{ display: "block", marginBottom: "6px", fontSize: "13px", fontWeight: 600, color: "#374151" }}>Replace Image</label>
+              <input type="file" accept="image/*" onChange={handleEditImageChange} style={{ fontSize: "13px" }} />
+            </div>
+
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+              <div>
+                <label style={{ display: "block", marginBottom: "6px", fontSize: "13px", fontWeight: 600, color: "#374151" }}>Color</label>
+                <input type="text" value={editColor} onChange={(e) => setEditColor(e.target.value)} required />
+              </div>
+              <div>
+                <label style={{ display: "block", marginBottom: "6px", fontSize: "13px", fontWeight: 600, color: "#374151" }}>Pattern</label>
+                <input type="text" value={editPattern} onChange={(e) => setEditPattern(e.target.value)} required />
+              </div>
+              <div>
+                <label style={{ display: "block", marginBottom: "6px", fontSize: "13px", fontWeight: 600, color: "#374151" }}>Size</label>
+                <select value={editSize} onChange={(e) => setEditSize(e.target.value)}>
+                  <option value="S">S — Small</option>
+                  <option value="M">M — Medium</option>
+                  <option value="L">L — Large</option>
+                  <option value="XL">XL — Extra Large</option>
+                </select>
+              </div>
+              <div>
+                <label style={{ display: "block", marginBottom: "6px", fontSize: "13px", fontWeight: 600, color: "#374151" }}>Material</label>
+                <input type="text" value={editMaterial} onChange={(e) => setEditMaterial(e.target.value)} required />
+              </div>
             </div>
 
             <div>
-              <label
-                style={{
-                  display: "block",
-                  marginBottom: "4px",
-                  fontSize: "14px",
-                }}
-              >
-                Color
-              </label>
-              <input
-                type="text"
-                value={editColor}
-                onChange={(e) => setEditColor(e.target.value)}
-                required
-                style={{
-                  width: "100%",
-                  padding: "8px",
-                  boxSizing: "border-box",
-                }}
-              />
-            </div>
-
-            <div>
-              <label
-                style={{
-                  display: "block",
-                  marginBottom: "4px",
-                  fontSize: "14px",
-                }}
-              >
-                Pattern
-              </label>
-              <input
-                type="text"
-                value={editPattern}
-                onChange={(e) => setEditPattern(e.target.value)}
-                required
-                style={{
-                  width: "100%",
-                  padding: "8px",
-                  boxSizing: "border-box",
-                }}
-              />
-            </div>
-
-            <div>
-              <label
-                style={{
-                  display: "block",
-                  marginBottom: "4px",
-                  fontSize: "14px",
-                }}
-              >
-                Size
-              </label>
-              <select
-                value={editSize}
-                onChange={(e) => setEditSize(e.target.value)}
-                style={{
-                  width: "100%",
-                  padding: "8px",
-                  boxSizing: "border-box",
-                }}
-              >
-                <option value="S">S</option>
-                <option value="M">M</option>
-                <option value="L">L</option>
-                <option value="XL">XL</option>
-              </select>
-            </div>
-
-            <div>
-              <label
-                style={{
-                  display: "block",
-                  marginBottom: "4px",
-                  fontSize: "14px",
-                }}
-              >
-                Material
-              </label>
-              <input
-                type="text"
-                value={editMaterial}
-                onChange={(e) => setEditMaterial(e.target.value)}
-                required
-                style={{
-                  width: "100%",
-                  padding: "8px",
-                  boxSizing: "border-box",
-                }}
-              />
-            </div>
-
-            <div>
-              <label
-                style={{
-                  display: "block",
-                  marginBottom: "4px",
-                  fontSize: "14px",
-                }}
-              >
-                Description
-              </label>
+              <label style={{ display: "block", marginBottom: "6px", fontSize: "13px", fontWeight: 600, color: "#374151" }}>Description</label>
               <textarea
                 value={editDescription}
                 onChange={(e) => setEditDescription(e.target.value)}
                 rows={3}
                 maxLength={500}
-                style={{
-                  width: "100%",
-                  padding: "8px",
-                  boxSizing: "border-box",
-                  resize: "vertical",
-                }}
+                style={{ resize: "vertical", minHeight: "72px" }}
               />
             </div>
 
-            <div style={{ display: "flex", gap: "10px", marginTop: "10px" }}>
+            <div style={{ display: "flex", gap: "10px", marginTop: "4px" }}>
               <button
                 type="button"
                 onClick={closeEditModal}
-                style={{
-                  flex: 1,
-                  padding: "10px",
-                  backgroundColor: "#e5e7eb",
-                  border: "none",
-                  borderRadius: "4px",
-                  cursor: "pointer",
-                }}
+                style={{ flex: 1, padding: "11px", backgroundColor: "#f4f6f9", color: "#374151", border: "none", borderRadius: "10px", cursor: "pointer", fontWeight: 600, fontSize: "14px" }}
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                style={{
-                  flex: 1,
-                  padding: "10px",
-                  backgroundColor: "#0070f3",
-                  color: "#fff",
-                  border: "none",
-                  borderRadius: "4px",
-                  cursor: "pointer",
-                  fontWeight: "bold",
-                }}
+                style={{ flex: 1, padding: "11px", backgroundColor: "#0070f3", color: "#fff", border: "none", borderRadius: "10px", cursor: "pointer", fontWeight: 700, fontSize: "14px", boxShadow: "0 4px 14px rgba(0,112,243,0.3)" }}
               >
-                Save Changes
+                Save
               </button>
             </div>
           </form>
@@ -807,74 +640,45 @@ export default function Profile() {
         <div
           style={{
             position: "fixed",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: "rgba(0,0,0,0.5)",
+            inset: 0,
+            backgroundColor: "rgba(0,0,0,0.45)",
             display: "flex",
             justifyContent: "center",
             alignItems: "center",
             zIndex: 1100,
+            padding: "20px",
           }}
         >
           <div
             style={{
               backgroundColor: "#fff",
-              padding: "24px",
-              borderRadius: "12px",
-              width: "90%",
-              maxWidth: "360px",
-              boxShadow: "0 4px 20px rgba(0,0,0,0.15)",
+              padding: "28px 24px",
+              borderRadius: "16px",
+              width: "100%",
+              maxWidth: "340px",
+              boxShadow: "0 8px 40px rgba(0,0,0,0.18)",
               textAlign: "center",
             }}
           >
-            <h3 style={{ margin: "0 0 12px 0", fontSize: "18px" }}>
+            <h3 style={{ fontSize: "18px", fontWeight: 800, marginBottom: "10px" }}>
               {confirmModal.title}
             </h3>
-            <p
-              style={{
-                margin: "0 0 20px 0",
-                fontSize: "14px",
-                color: "#555",
-                lineHeight: "1.5",
-              }}
-            >
+            <p style={{ fontSize: "14px", color: "#6b7280", lineHeight: "1.55", marginBottom: "22px" }}>
               {confirmModal.message}
             </p>
 
             <div style={{ display: "flex", gap: "10px" }}>
               <button
                 type="button"
-                onClick={() =>
-                  setConfirmModal((prev) => ({ ...prev, isOpen: false }))
-                }
-                style={{
-                  flex: 1,
-                  padding: "10px",
-                  backgroundColor: "#e5e7eb",
-                  border: "none",
-                  borderRadius: "6px",
-                  cursor: "pointer",
-                  fontSize: "14px",
-                }}
+                onClick={() => setConfirmModal((prev) => ({ ...prev, isOpen: false }))}
+                style={{ flex: 1, padding: "11px", backgroundColor: "#f4f6f9", color: "#374151", border: "none", borderRadius: "10px", cursor: "pointer", fontSize: "14px", fontWeight: 600 }}
               >
                 Cancel
               </button>
               <button
                 type="button"
                 onClick={confirmModal.onConfirm}
-                style={{
-                  flex: 1,
-                  padding: "10px",
-                  backgroundColor: "#ef4444",
-                  color: "#fff",
-                  border: "none",
-                  borderRadius: "6px",
-                  cursor: "pointer",
-                  fontWeight: "bold",
-                  fontSize: "14px",
-                }}
+                style={{ flex: 1, padding: "11px", backgroundColor: "#ef4444", color: "#fff", border: "none", borderRadius: "10px", cursor: "pointer", fontWeight: 700, fontSize: "14px", boxShadow: "0 4px 12px rgba(239,68,68,0.3)" }}
               >
                 Confirm
               </button>

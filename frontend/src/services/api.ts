@@ -7,7 +7,7 @@
 
 import { User, AuthResponse } from "../types/index";
 
-const BASE_URL =
+export const BASE_URL =
   (import.meta.env.VITE_API_URL as string) || "http://localhost:5000/api";
 
 // Backend origin without the /api suffix, used for static file URLs (uploads)
