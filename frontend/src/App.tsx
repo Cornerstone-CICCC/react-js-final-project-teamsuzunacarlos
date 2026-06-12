@@ -6,8 +6,8 @@
 // - Setup route protection (private routes)
 // - Handle app-level layout (Header, navigation)
 
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-// import { useAuth } from "./context/AuthContext";
+import { BrowserRouter, Routes, Route, Navigate, Outlet } from "react-router-dom";
+import { useAuth } from "./context/AuthContext";
 import Layout from "./components/Styles/Layout";
 import Home from "./pages/Home";
 import Login from "./pages/LoginPage";
@@ -18,57 +18,39 @@ import Profile from "./pages/ProfilePage";
 import Messages from "./pages/MessagesPage";
 import { Toaster } from "react-hot-toast";
 
-const ProtectedRoute = ({ children }: { children: React.JSX.Element }) => {
-  // const { user, loading } = useAuth();
+// Renders Layout + Outlet for all authenticated routes.
+// Using Outlet (React Router v6 nested routes) ensures each child route
+// unmounts and remounts correctly when navigating between pages.
+const ProtectedLayout = () => {
+  const { user, loading } = useAuth();
 
-  // if (loading) return <div style={{ padding: "20px" }}>Loading...</div>;
-  // if (!user) return <Navigate to="/login" replace />;
+  if (loading) return <div style={{ padding: "20px" }}>Loading...</div>;
+  if (!user) return <Navigate to="/login" replace />;
 
-  return <Layout>{children}</Layout>;
+  return (
+    <Layout>
+      <Outlet />
+    </Layout>
+  );
 };
 
 export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
 
-        <Route
-          path="/discover"
-          element={
-            <ProtectedRoute>
-              <DiscoverPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/messages"
-          element={
-            <ProtectedRoute>
-              <Messages />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/profile"
-          element={
-            <ProtectedRoute>
-              <Profile />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/upload-sock"
-          element={
-            <ProtectedRoute>
-              <UploadSock />
-            </ProtectedRoute>
-          }
-        />
+        {/* All protected pages share one ProtectedLayout instance */}
+        <Route element={<ProtectedLayout />}>
+          <Route path="/" element={<Navigate to="/discover" replace />} />
+          <Route path="/discover" element={<DiscoverPage />} />
+          <Route path="/messages" element={<Messages />} />
+          <Route path="/profile" element={<Profile />} />
+          <Route path="/upload-sock" element={<UploadSock />} />
+        </Route>
 
-        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="*" element={<Navigate to="/discover" replace />} />
       </Routes>
       <Toaster />
     </BrowserRouter>

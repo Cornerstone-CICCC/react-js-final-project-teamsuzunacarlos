@@ -5,7 +5,7 @@
 // - Redirect to home if already logged in
 
 import React, { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { Navigate, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import toast from "react-hot-toast";
 
@@ -13,8 +13,11 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const { login } = useAuth();
-  const navigate = useNavigate();
+  const { login, user } = useAuth();
+
+  // Once user state is set after login, React re-renders this component and
+  // Navigate handles the redirect — avoiding the race between navigate() and setUser()
+  if (user) return <Navigate to="/discover" replace />;
 
   const handleSubmit = async (e: React.SubmitEvent) => {
     e.preventDefault();
@@ -23,7 +26,7 @@ export default function Login() {
     try {
       await login({ email, password });
       toast.success(`Welcome back!`);
-      navigate("/discover");
+      // No navigate() here — the if (user) check above handles redirect after re-render
     } catch (err) {
       toast.error("Invalid email or password.");
       // setError("Invalid email or password.");

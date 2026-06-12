@@ -15,7 +15,6 @@ A full-stack dating application for lonely socks! When you lose a sock, upload i
 - **Backend:** Node.js + Express
 - **Database:** MongoDB + Mongoose
 - **Real-time Communication:** Socket.IO
-- **Code Quality:** Biome (formatter + linter) + Husky (git hooks)
 
 ## 📂 Project Structure
 

@@ -2,6 +2,8 @@ import React from "react";
 import Header from "../Navigation/Header";
 import Navbar from "../Navigation/Navbar";
 
+const MAX_WIDTH = "1600px";
+
 export default function Layout({ children }: { children: React.ReactNode }) {
   return (
     <div
@@ -13,7 +15,11 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       }}
     >
       <Header />
-      <main style={{ flexGrow: 1, paddingBottom: "60px" }}>{children}</main>
+      <main style={{ flexGrow: 1, paddingBottom: "60px" }}>
+        <div style={{ maxWidth: MAX_WIDTH, margin: "0 auto", width: "100%" }}>
+          {children}
+        </div>
+      </main>
       <Navbar />
     </div>
   );

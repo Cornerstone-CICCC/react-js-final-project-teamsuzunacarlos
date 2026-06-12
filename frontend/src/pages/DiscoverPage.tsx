@@ -12,6 +12,7 @@ import toast from "react-hot-toast";
 import { FaSearch } from "react-icons/fa";
 import { FaRegHeart } from "react-icons/fa";
 import { TbMoodSad2 } from "react-icons/tb";
+import { getImageUrl } from "../services/api";
 
 export default function Discover() {
   const [socks, setSocks] = useState<Sock[]>([]);
@@ -24,77 +25,16 @@ export default function Discover() {
   useEffect(() => {
     const fetchSocks = async () => {
       try {
-        // const res = await fetch('http://localhost:5000/api/socks', { credentials: 'include' });
-        // const data = await res.json();
-        // setSocks(data);
+        const res = await fetch('http://localhost:5000/api/socks', { credentials: 'include' });
+        const data = await res.json();
+        setSocks(data.socks || []);
 
-        const dummySocks: Sock[] = [
-          {
-            id: "1",
-            userId: "userA",
-            color: "Red",
-            pattern: "Striped",
-            size: "M",
-            material: "Cotton",
-            images: [
-              "https://images.unsplash.com/photo-1582966772680-860e372bb558?w=500",
-            ],
-            description:
-              "Lost my twin at the laundromat. Looking for a cozy partner.",
-            status: "lonely",
-            createdAt: "",
-          },
-          {
-            id: "2",
-            userId: "userB",
-            color: "Blue",
-            pattern: "Polka Dot",
-            size: "L",
-            material: "Wool",
-            images: [
-              "https://images.unsplash.com/photo-1586350977771-b3b0abd50c82?w=500",
-            ],
-            description:
-              "Extremely soft, slightly worn out but still has a lot of love to give.",
-            status: "lonely",
-            createdAt: "",
-          },
-        ];
-
-        const dummyMySocks: Sock[] = [
-          {
-            id: "101",
-            userId: "me",
-            color: "Green",
-            pattern: "Christmas Holiday",
-            size: "M",
-            material: "Wool",
-            images: [
-              "https://images.unsplash.com/photo-1543163521-1bf539c55dd2?w=100",
-            ],
-            description: "",
-            status: "lonely",
-            createdAt: "",
-          },
-          {
-            id: "102",
-            userId: "me",
-            color: "Black",
-            pattern: "Business Plain",
-            size: "M",
-            material: "Cotton",
-            images: [
-              "https://images.unsplash.com/photo-1610986603166-f7842862c17e?w=100",
-            ],
-            description: "",
-            status: "lonely",
-            createdAt: "",
-          },
-        ];
-        setMySocks(dummyMySocks);
-        setSocks(dummySocks);
+        const mySocksRes = await fetch('http://localhost:5000/api/socks/my-socks', { credentials: 'include' });
+        const mySocksData = await mySocksRes.json();
+        setMySocks(mySocksData || []);
       } catch (error) {
         console.error("Failed to fetch socks:", error);
+        toast.error("Failed to load socks");
       } finally {
         setLoading(false);
       }
@@ -111,44 +51,43 @@ export default function Discover() {
     if (direction === "like") {
       setShowModal(true);
       return;
-      // toast.success(
-      //   `It's a Match! You and ${currentSock.color} ${currentSock.pattern} Sock belong together!`,
-      //   {
-      //     duration: 5000,
-      //     style: {
-      //       borderRadius: "10px",
-      //       background: "#333",
-      //       color: "#fff",
-      //     },
-      //   },
-      // );
-
-      // await fetch('http://localhost:5000/api/matches', {
-      //   method: 'POST',
-      //   body: JSON.stringify({ sock2Id: currentSock.id, status: 'pending' }),
-      // });
     }
 
     setCurrentIndex((prev) => prev + 1);
   };
 
-  const handleSelectMySock = (mySockId: string) => {
-    const selectedSock = mySocks.find((s) => s.id === mySockId);
-
-    toast.success(
-      `Sent match request using your ${selectedSock?.color} sock!`,
-      {
-        duration: 4000,
-      },
+  const handleSelectMySock = async (mySockId: string) => {
+    const selectedSock = mySocks.find(
+      (s) => (s as any)._id === mySockId || s.id === mySockId
     );
 
-    // await fetch('http://localhost:5000/api/matches', {
-    //   method: 'POST',
-    //   body: JSON.stringify({ sock1Id: mySockId, sock2Id: currentSock.id }),
-    // });
+    try {
+      const res = await fetch('http://localhost:5000/api/matches', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sock1Id: mySockId,
+          sock2Id: (currentSock as any)?._id || currentSock?.id,
+        }),
+        credentials: 'include'
+      });
 
-    setShowModal(false);
-    setCurrentIndex((prev) => prev + 1);
+      const data = await res.json();
+
+      if (res.ok) {
+        const successMsg = data.message === "It's a match!"
+          ? `It's a match! Your ${selectedSock?.color} sock found its partner!`
+          : `Sent match request using your ${selectedSock?.color} sock!`;
+        toast.success(successMsg, { duration: 4000 });
+        setShowModal(false);
+        setCurrentIndex((prev) => prev + 1);
+      } else {
+        toast.error(data.message || "Failed to create match");
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("Error creating match");
+    }
   };
 
   if (loading) {
@@ -191,7 +130,7 @@ export default function Discover() {
         }}
       >
         <img
-          src={currentSock.images[0]}
+          src={getImageUrl(currentSock.images[0])}
           alt="Sock"
           style={{ width: "100%", height: "300px", objectFit: "cover" }}
         />
@@ -267,7 +206,7 @@ export default function Discover() {
               Which of your socks is looking for this partner?
             </p>
 
-            {/* List of my socks */}
+            {/* List of my available socks */}
             <div
               style={{
                 maxHeight: "200px",
@@ -278,10 +217,15 @@ export default function Discover() {
                 margin: "15px 0",
               }}
             >
-              {mySocks.map((sock) => (
+              {mySocks.filter((s) => s.status === "available").length === 0 && (
+                <p style={{ textAlign: "center", color: "#888", fontSize: "14px", margin: "10px 0" }}>
+                  You have no available socks. Upload one first!
+                </p>
+              )}
+              {mySocks.filter((s) => s.status === "available").map((sock) => (
                 <div
-                  key={sock.id}
-                  onClick={() => handleSelectMySock(sock.id)}
+                  key={(sock as any)._id || sock.id}
+                  onClick={() => handleSelectMySock((sock as any)._id || sock.id)}
                   style={{
                     display: "flex",
                     alignItems: "center",
@@ -300,7 +244,7 @@ export default function Discover() {
                   }
                 >
                   <img
-                    src={sock.images[0]}
+                    src={getImageUrl(sock.images[0])}
                     alt=""
                     style={{
                       width: "40px",

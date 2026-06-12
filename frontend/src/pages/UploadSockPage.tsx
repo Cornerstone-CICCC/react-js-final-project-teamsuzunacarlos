@@ -47,60 +47,26 @@ export default function UploadSock() {
     formData.append("size", size);
     formData.append("material", material);
     formData.append("description", description);
-    // depending on what carlos's backend key is (e.x. upload.single('image'))
-    formData.append("image", imageFile);
+    formData.append("images", imageFile);
 
-    console.log(
-      "Form data ready to be sent to backend via multipart/form-data",
-    );
+    try {
+      const res = await fetch('http://localhost:5000/api/socks', {
+        method: 'POST',
+        body: formData,
+        credentials: 'include'
+      });
 
-    // try {
-    //   const res = await fetch('http://localhost:5000/api/socks', {
-    //     method: 'POST',
-    //     body: formData,
-    //     credentials: 'include'
-    //   });
-    //   if (res.ok) {
-    //     toast.success("Sock uploaded successfully!");
-    //     navigate('/profile');
-    //   } else {
-    //     toast.error("Upload failed.");
-    //   }
-    // } catch (err) {
-    //   console.error(err);
-    // }
-
-    // const sockData = {
-    //   color,
-    //   pattern,
-    //   size,
-    //   material,
-    //   description,
-    //   images: [
-    //     imageUrl ||
-    //       "https://images.unsplash.com/photo-1582966772680-860e372bb558?w=500",
-    //   ],
-    // };
-
-    // console.log("Uploading sock data:", sockData);
-
-    // if the backend is ready, switch to this!!!
-    // try {
-    //   const res = await fetch('http://localhost:5000/api/socks', {
-    //     method: 'POST',
-    //     headers: { 'Content-Type': 'application/json' },
-    //     body: JSON.stringify(sockData),
-    //     credentials: 'include'
-    //   });
-    //   if (res.ok) navigate('/profile');
-    // } catch (err) { ... }
-
-    // setMessage("Sock uploaded successfully!");
-    toast.success("Sock uploaded successfully!");
-
-    setTimeout(() => {
-      navigate("/discover");
-    }, 2000);
+      if (res.ok) {
+        toast.success("Sock uploaded successfully!");
+        navigate('/discover');
+      } else {
+        const error = await res.json();
+        toast.error(error.message || "Upload failed.");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Error uploading sock.");
+    }
   };
 
   return (

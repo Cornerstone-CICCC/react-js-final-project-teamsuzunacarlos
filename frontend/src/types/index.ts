@@ -13,6 +13,7 @@ export interface AuthResponse {
 }
 
 export interface Sock {
+  _id?: string;
   id: string;
   userId: string;
   color: string;
@@ -21,7 +22,26 @@ export interface Sock {
   material: string;
   images: string[];
   description: string;
-  status: "lonely" | "matched";
+  status: "available" | "matched" | "traded";
+  createdAt: string;
+}
+
+export interface PopulatedMatch {
+  _id: string;
+  sock1Id: Sock;
+  sock2Id: Sock;
+  user1Id: {
+    _id: string;
+    username: string;
+    profilePicture?: string;
+  };
+  user2Id: {
+    _id: string;
+    username: string;
+    profilePicture?: string;
+  };
+  status: "pending" | "accepted" | "rejected";
+  matchedAt?: string;
   createdAt: string;
 }
 
@@ -41,5 +61,6 @@ export interface Conversation {
     username: string;
     profilePicture?: string;
   };
+  sockImage?: string;
   lastMessage?: string;
 }
