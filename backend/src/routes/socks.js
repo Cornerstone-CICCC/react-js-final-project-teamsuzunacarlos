@@ -1,8 +1,22 @@
-// Sock CRUD routes
-// Should include:
-// - GET /socks - list all available socks (with filters: color, pattern, etc.)
-// - GET /socks/:id - get single sock details
-// - POST /socks - upload new sock (authenticated)
-// - PUT /socks/:id - edit sock (only owner)
-// - DELETE /socks/:id - delete sock (only owner)
-// - GET /my-socks - get current user's socks
+import express from 'express';
+import {
+  getAllSocks,
+  getSockById,
+  createSock,
+  updateSock,
+  deleteSock,
+  getUserSocks,
+} from '../controllers/sockController.js';
+import { protect, optionalAuth } from '../middleware/auth.js';
+import { upload } from '../services/imageService.js';
+
+const router = express.Router();
+
+router.get('/', optionalAuth, getAllSocks);
+router.get('/my-socks', protect, getUserSocks);
+router.get('/:id', getSockById);
+router.post('/', protect, upload.array('images'), createSock);
+router.put('/:id', protect, upload.array('images'), updateSock);
+router.delete('/:id', protect, deleteSock);
+
+export default router;
