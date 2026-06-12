@@ -30,12 +30,19 @@ export default function Footer() {
         height: "60px",
         backgroundColor: "#fff",
         borderTop: "1px solid #eee",
-        display: "flex",
-        justifyContent: "space-around",
-        alignItems: "center",
         zIndex: 100,
       }}
     >
+      <div
+        style={{
+          maxWidth: "1600px",
+          margin: "0 auto",
+          height: "100%",
+          display: "flex",
+          justifyContent: "space-around",
+          alignItems: "center",
+        }}
+      >
       <NavLink to="/discover" style={linkStyle}>
         <span style={{ fontSize: "20px" }}>
           <FaSearch />
@@ -63,6 +70,7 @@ export default function Footer() {
         </span>
         <span>Profile</span>
       </NavLink>
+      </div>
     </footer>
   );
 }

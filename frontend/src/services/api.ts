@@ -10,6 +10,17 @@ import { User, AuthResponse } from "../types/index";
 const BASE_URL =
   (import.meta.env.VITE_API_URL as string) || "http://localhost:5000/api";
 
+// Backend origin without the /api suffix, used for static file URLs (uploads)
+const BACKEND_ORIGIN = BASE_URL.replace(/\/api$/, "");
+
+// Turns a stored path like "/uploads/file.jpg" into a full backend URL.
+// External URLs (http/https) are returned unchanged.
+export const getImageUrl = (path: string | undefined): string => {
+  if (!path) return "";
+  if (path.startsWith("http")) return path;
+  return `${BACKEND_ORIGIN}${path}`;
+};
+
 const request = async <T>(
   endpoint: string,
   options: RequestInit = {},

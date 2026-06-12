@@ -101,12 +101,19 @@ export const updateSock = async (req, res) => {
     }
 
     const { color, pattern, size, material, description } = req.body;
+
+    let images = sock.images;
+    if (req.files && req.files.length > 0) {
+      images = req.files.map((f) => `/uploads/${f.filename}`);
+    }
+
     Object.assign(sock, {
       color: color || sock.color,
       pattern: pattern || sock.pattern,
       size: size || sock.size,
       material: material || sock.material,
-      description: description || sock.description,
+      description: description !== undefined ? description : sock.description,
+      images,
     });
 
     await sock.save();

@@ -5,7 +5,7 @@
 // - Redirect to home if already logged in
 
 import React, { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { Navigate, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import zxcvbn from "zxcvbn";
 import toast from "react-hot-toast";
@@ -16,8 +16,10 @@ export default function Signup() {
   const [password, setPassword] = useState("");
   const [passwordScore, setPasswordScore] = useState(-1);
   const [error, setError] = useState("");
-  const { register } = useAuth();
-  const navigate = useNavigate();
+  const { register, user } = useAuth();
+
+  // Once user state is set after registration, React re-renders and Navigate handles redirect
+  if (user) return <Navigate to="/discover" replace />;
 
   const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
@@ -43,7 +45,7 @@ export default function Signup() {
     try {
       await register({ username, email, password });
       toast.success("Signed in successfully!");
-      navigate("/discover");
+      // No navigate() here — the if (user) check above handles redirect after re-render
     } catch (err) {
       toast.error("Invalid email or password.");
       // setError("Registration failed. Email might already be in use.");

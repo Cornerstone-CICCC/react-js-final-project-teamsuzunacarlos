@@ -16,10 +16,6 @@ export default function Header() {
   return (
     <header
       style={{
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center",
-        padding: "0 20px",
         height: "60px",
         backgroundColor: "#fff",
         borderBottom: "1px solid #eee",
@@ -28,6 +24,17 @@ export default function Header() {
         zIndex: 100,
       }}
     >
+      <div
+        style={{
+          maxWidth: "1600px",
+          margin: "0 auto",
+          height: "100%",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          padding: "0 20px",
+        }}
+      >
       <Link
         to="/discover"
         style={{
@@ -75,6 +82,7 @@ export default function Header() {
           </span>
         </Link>
       )}
+      </div>
     </header>
   );
 }

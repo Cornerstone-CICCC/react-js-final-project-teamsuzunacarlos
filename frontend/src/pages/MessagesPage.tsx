@@ -11,6 +11,7 @@ import { useSocket } from "../context/SocketContext";
 import { useAuth } from "../context/AuthContext";
 import { Conversation, Message } from "../types";
 import { LiaSocksSolid } from "react-icons/lia";
+import { getImageUrl } from "../services/api";
 
 export default function Messages() {
   const socket = useSocket();
@@ -21,138 +22,151 @@ export default function Messages() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [text, setText] = useState("");
 
-  // dummy conversation
+  // Load conversations from the API
   useEffect(() => {
-    const dummyConversations: Conversation[] = [
-      {
-        matchId: "match_1",
-        otherUser: {
-          id: "userA",
-          username: "Carlos",
-          profilePicture:
-            "https://images.unsplash.com/photo-1582966772680-860e372bb558?w=100",
-        },
-      },
-      {
-        matchId: "match_2",
-        otherUser: {
-          id: "userB",
-          username: "Diana",
-          profilePicture:
-            "https://images.unsplash.com/photo-1586350977771-b3b0abd50c82?w=100",
-        },
-      },
-    ];
-    setConversations(dummyConversations);
-  }, []);
+    const fetchConversations = async () => {
+      try {
+        const res = await fetch('http://localhost:5000/api/messages/conversations', { credentials: 'include' });
+        if (!res.ok) return;
+        const data = await res.json();
+        // _id is always present; user.id is only set after login (not after getMe refresh)
+        const userId = (user as any)?._id || user?.id;
+        const convs: Conversation[] = (data || []).map((item: any) => {
+          const match = item.match;
+          const u1 = match.user1Id;
+          const u2 = match.user2Id;
+          const isU1 = u1._id === userId;
+          const otherUser = isU1 ? u2 : u1;
+          // sock1Id belongs to user1, sock2Id belongs to user2
+          const otherSock = isU1 ? match.sock2Id : match.sock1Id;
+          return {
+            matchId: match._id,
+            otherUser: {
+              id: otherUser._id || otherUser.id,
+              username: otherUser.username,
+              profilePicture: otherUser.profilePicture,
+            },
+            sockImage: otherSock?.images?.[0],
+            lastMessage: item.lastMessage?.messageText,
+          };
+        });
+        setConversations(convs);
+      } catch (error) {
+        console.error("Failed to fetch conversations:", error);
+      }
+    };
+    fetchConversations();
 
-  // Socket room
+    // // dummy conversation
+    // const dummyConversations: Conversation[] = [
+    //   {
+    //     matchId: "match_1",
+    //     otherUser: {
+    //       id: "userA",
+    //       username: "Carlos",
+    //       profilePicture:
+    //         "https://images.unsplash.com/photo-1582966772680-860e372bb558?w=100",
+    //     },
+    //   },
+    //   {
+    //     matchId: "match_2",
+    //     otherUser: {
+    //       id: "userB",
+    //       username: "Diana",
+    //       profilePicture:
+    //         "https://images.unsplash.com/photo-1586350977771-b3b0abd50c82?w=100",
+    //     },
+    //   },
+    // ];
+    // setConversations(dummyConversations);
+  }, [user?.id]);
+
+  // Load messages from API and set up socket room when a conversation is selected
   useEffect(() => {
     if (!activeMatchId) return;
 
-    let dummyMessages: Message[] = [];
+    const fetchMessages = async () => {
+      try {
+        const res = await fetch(`http://localhost:5000/api/messages/${activeMatchId}`, { credentials: 'include' });
+        if (!res.ok) return;
+        const data = await res.json();
+        const msgs: Message[] = (data.messages || []).map((msg: any) => ({
+          id: msg._id,
+          senderId: msg.senderId?._id || msg.senderId,
+          receiverId: msg.receiverId?._id || msg.receiverId,
+          matchId: msg.matchId,
+          messageText: msg.messageText,
+          createdAt: msg.createdAt,
+        }));
+        setMessages(msgs);
+      } catch (error) {
+        console.error("Failed to fetch messages:", error);
+      }
+    };
+    fetchMessages();
 
-    if (activeMatchId === "match_1") {
-      dummyMessages = [
-        {
-          id: "m1",
-          senderId: "userA",
-          receiverId: "current_user",
-          matchId: "match_1",
-          messageText: "Hi! Is your green holiday sock still lonely?",
-          createdAt: "2026-06-09T12:00:00Z",
-        },
-        {
-          id: "m2",
-          senderId: "current_user",
-          receiverId: "userA",
-          matchId: "match_1",
-          messageText: "Yes it is! I have been looking for it since Christmas!",
-          createdAt: "2026-06-09T12:05:00Z",
-        },
-        {
-          id: "m3",
-          senderId: "userA",
-          receiverId: "current_user",
-          matchId: "match_1",
-          messageText:
-            "Awesome! My Red Striped sock would love to match with it.",
-          createdAt: "2026-06-09T12:06:00Z",
-        },
-      ];
-    } else if (activeMatchId === "match_2") {
-      dummyMessages = [
-        {
-          id: "m4",
-          senderId: "userB",
-          receiverId: "current_user",
-          matchId: "match_2",
-          messageText:
-            "Hello there! My Blue Polka Dot sock is looking for a soft partner.",
-          createdAt: "2026-06-10T10:00:00Z",
-        },
-        {
-          id: "m5",
-          senderId: "current_user",
-          receiverId: "userB",
-          matchId: "match_2",
-          messageText: "Mine is 100% wool, super warm!",
-          createdAt: "2026-06-10T10:02:00Z",
-        },
-        {
-          id: "m6",
-          senderId: "userB",
-          receiverId: "current_user",
-          matchId: "match_2",
-          messageText: "Sounds comfy. Is your sock size M or L?",
-          createdAt: "2026-06-10T10:03:00Z",
-        },
-      ];
-    }
-
-    setMessages(dummyMessages);
+    // // dummy messages
+    // const dummyMessages: Message[] = [ ... ];
+    // setMessages(dummyMessages);
 
     if (socket) {
-      socket.emit("join_room", { matchId: activeMatchId });
-    }
-
-    if (socket) {
-      socket.on("message:received", (newMessage: Message) => {
+      // Backend room name is "match-{matchId}", joined via "join-match" event
+      socket.emit("join-match", activeMatchId);
+      socket.on("receive-message", (newMessage: Message) => {
         if (newMessage.matchId === activeMatchId) {
-          setMessages((prev) => [...prev, newMessage]);
+          setMessages((prev) => {
+            // Avoid duplicate if server echoes back our own sent message
+            if (prev.some((m) => m.id === newMessage.id)) return prev;
+            return [...prev, newMessage];
+          });
         }
       });
     }
 
     return () => {
-      if (socket) socket.off("message:received");
+      if (socket) {
+        socket.emit("leave-match", activeMatchId);
+        socket.off("receive-message");
+      }
     };
   }, [activeMatchId, socket]);
 
-  // Proccessing message
-  const handleSend = (e: React.FormEvent) => {
+  // Send message — saves to DB via REST API and emits via socket for real-time delivery
+  const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!text.trim() || !activeMatchId) return;
 
-    const currentUserId = user?.id || "current_user";
-    const activeConv = conversations.find((c) => c.matchId === activeMatchId);
-
-    const newMessage: Message = {
-      id: Date.now().toString(),
-      senderId: currentUserId,
-      receiverId: activeConv?.otherUser.id || "",
-      matchId: activeMatchId,
-      messageText: text,
-      createdAt: new Date().toISOString(),
-    };
-
-    setMessages((prev) => [...prev, newMessage]);
-
-    if (socket) {
-      socket.emit("message:send", newMessage);
-    }
-
+    const messageText = text;
     setText("");
+
+    try {
+      const res = await fetch('http://localhost:5000/api/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ matchId: activeMatchId, messageText }),
+        credentials: 'include',
+      });
+
+      if (res.ok) {
+        const { data: msg } = await res.json();
+        const newMessage: Message = {
+          id: msg._id,
+          senderId: msg.senderId?._id || msg.senderId,
+          receiverId: msg.receiverId?._id || msg.receiverId,
+          matchId: msg.matchId,
+          messageText: msg.messageText,
+          createdAt: msg.createdAt,
+        };
+        setMessages((prev) => [...prev, newMessage]);
+
+        if (socket) {
+          socket.emit("send-message", newMessage);
+        }
+      }
+    } catch (error) {
+      console.error("Failed to send message:", error);
+      setText(messageText);
+    }
   };
 
   const activeConversation = conversations.find(
@@ -201,7 +215,7 @@ export default function Messages() {
             }}
           >
             <img
-              src={conv.otherUser.profilePicture} // ../backend/${user.images[number]}
+              src={getImageUrl(conv.sockImage) || conv.otherUser.profilePicture || ""}
               alt=""
               style={{
                 width: "40px",
@@ -253,7 +267,7 @@ export default function Messages() {
               }}
             >
               <img
-                src={activeConversation.otherUser.profilePicture}
+                src={getImageUrl(activeConversation.sockImage) || activeConversation.otherUser.profilePicture || ""}
                 alt=""
                 style={{
                   width: "30px",
@@ -277,7 +291,7 @@ export default function Messages() {
               }}
             >
               {messages.map((msg) => {
-                const isMe = msg.senderId === (user?.id || "current_user");
+                const isMe = msg.senderId === ((user as any)?._id || user?.id);
                 return (
                   <div
                     key={msg.id}

@@ -19,11 +19,26 @@ export const getUserMatches = async (req, res) => {
 
 export const createMatch = async (req, res) => {
   try {
-    const { sock2Id } = req.body;
+    const { sock1Id, sock2Id } = req.body;
 
-    const sock1 = await Sock.findOne({ userId: req.userId, status: 'available' });
-    if (!sock1) {
-      return res.status(400).json({ message: 'You must have at least one available sock' });
+    // Use the specific sock the user selected, or fall back to their first available one
+    let sock1;
+    if (sock1Id) {
+      sock1 = await Sock.findById(sock1Id);
+      if (!sock1) {
+        return res.status(404).json({ message: 'Your selected sock was not found' });
+      }
+      if (sock1.userId.toString() !== req.userId) {
+        return res.status(403).json({ message: 'That sock does not belong to you' });
+      }
+      if (sock1.status !== 'available') {
+        return res.status(400).json({ message: 'Your selected sock is already matched' });
+      }
+    } else {
+      sock1 = await Sock.findOne({ userId: req.userId, status: 'available' });
+      if (!sock1) {
+        return res.status(400).json({ message: 'You need to upload at least one sock before matching' });
+      }
     }
 
     const sock2 = await Sock.findById(sock2Id);
@@ -43,7 +58,26 @@ export const createMatch = async (req, res) => {
     });
 
     if (existingMatch) {
-      return res.status(400).json({ message: 'Match already exists' });
+      if (existingMatch.status === 'rejected') {
+        // Allow re-matching after a rejection
+        await Match.findByIdAndDelete(existingMatch._id);
+      } else if (existingMatch.status === 'accepted') {
+        return res.status(400).json({ message: 'These socks are already matched!' });
+      } else {
+        // status is 'pending'
+        if (existingMatch.user1Id.toString() === req.userId) {
+          // Same user trying to send again
+          return res.status(400).json({ message: 'Match request already sent - waiting for their response' });
+        }
+        // The OTHER user liked back → auto-accept (mutual match)
+        existingMatch.status = 'accepted';
+        existingMatch.matchedAt = new Date();
+        await existingMatch.save();
+        await Sock.findByIdAndUpdate(existingMatch.sock1Id, { status: 'matched' });
+        await Sock.findByIdAndUpdate(existingMatch.sock2Id, { status: 'matched' });
+        await existingMatch.populate('sock1Id sock2Id user1Id user2Id');
+        return res.status(200).json({ message: "It's a match!", match: existingMatch });
+      }
     }
 
     const match = await Match.create({

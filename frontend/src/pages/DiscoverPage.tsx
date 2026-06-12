@@ -12,6 +12,7 @@ import toast from "react-hot-toast";
 import { FaSearch } from "react-icons/fa";
 import { FaRegHeart } from "react-icons/fa";
 import { TbMoodSad2 } from "react-icons/tb";
+import { getImageUrl } from "../services/api";
 
 export default function Discover() {
   const [socks, setSocks] = useState<Sock[]>([]);
@@ -56,25 +57,32 @@ export default function Discover() {
   };
 
   const handleSelectMySock = async (mySockId: string) => {
-    const selectedSock = mySocks.find((s) => s.id === mySockId);
+    const selectedSock = mySocks.find(
+      (s) => (s as any)._id === mySockId || s.id === mySockId
+    );
 
     try {
       const res = await fetch('http://localhost:5000/api/matches', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sock2Id: currentSock?.id }),
+        body: JSON.stringify({
+          sock1Id: mySockId,
+          sock2Id: (currentSock as any)?._id || currentSock?.id,
+        }),
         credentials: 'include'
       });
 
+      const data = await res.json();
+
       if (res.ok) {
-        toast.success(
-          `Sent match request using your ${selectedSock?.color} sock!`,
-          { duration: 4000 }
-        );
+        const successMsg = data.message === "It's a match!"
+          ? `It's a match! Your ${selectedSock?.color} sock found its partner!`
+          : `Sent match request using your ${selectedSock?.color} sock!`;
+        toast.success(successMsg, { duration: 4000 });
         setShowModal(false);
         setCurrentIndex((prev) => prev + 1);
       } else {
-        toast.error("Failed to create match");
+        toast.error(data.message || "Failed to create match");
       }
     } catch (error) {
       console.error(error);
@@ -122,7 +130,7 @@ export default function Discover() {
         }}
       >
         <img
-          src={currentSock.images[0]}
+          src={getImageUrl(currentSock.images[0])}
           alt="Sock"
           style={{ width: "100%", height: "300px", objectFit: "cover" }}
         />
@@ -198,7 +206,7 @@ export default function Discover() {
               Which of your socks is looking for this partner?
             </p>
 
-            {/* List of my socks */}
+            {/* List of my available socks */}
             <div
               style={{
                 maxHeight: "200px",
@@ -209,10 +217,15 @@ export default function Discover() {
                 margin: "15px 0",
               }}
             >
-              {mySocks.map((sock) => (
+              {mySocks.filter((s) => s.status === "available").length === 0 && (
+                <p style={{ textAlign: "center", color: "#888", fontSize: "14px", margin: "10px 0" }}>
+                  You have no available socks. Upload one first!
+                </p>
+              )}
+              {mySocks.filter((s) => s.status === "available").map((sock) => (
                 <div
-                  key={sock.id}
-                  onClick={() => handleSelectMySock(sock.id)}
+                  key={(sock as any)._id || sock.id}
+                  onClick={() => handleSelectMySock((sock as any)._id || sock.id)}
                   style={{
                     display: "flex",
                     alignItems: "center",
@@ -231,7 +244,7 @@ export default function Discover() {
                   }
                 >
                   <img
-                    src={sock.images[0]}
+                    src={getImageUrl(sock.images[0])}
                     alt=""
                     style={{
                       width: "40px",

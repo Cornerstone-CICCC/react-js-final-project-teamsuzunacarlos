@@ -22,40 +22,28 @@ export const SocketProvider = ({ children }: { children: ReactNode }) => {
   const { user } = useAuth();
 
   useEffect(() => {
-    // Get token from cookie
-    const getToken = () => {
-      const cookies = document.cookie.split(";");
-      for (let cookie of cookies) {
-        const [name, value] = cookie.trim().split("=");
-        if (name === "token") return decodeURIComponent(value);
-      }
-      return null;
-    };
-
-    if (user) {
-      const socketUrl =
-        (import.meta.env.VITE_SOCKET_URL as string) || "http://localhost:5000";
-      const token = getToken();
-
-      const newSocket = io(socketUrl, {
-        auth: {
-          token: token || "",
-        },
-        withCredentials: true,
-      });
-
-      setSocket(newSocket);
-
-      return () => {
-        newSocket.close();
-      };
-    } else {
-      if (socket) {
-        socket.close();
-        setSocket(null);
-      }
+    if (!user) {
+      setSocket(null);
+      return;
     }
-  }, [user, socket]);
+
+    const socketUrl =
+      (import.meta.env.VITE_SOCKET_URL as string) || "http://localhost:5000";
+
+    // withCredentials sends the httpOnly JWT cookie automatically in the handshake
+    const newSocket = io(socketUrl, {
+      withCredentials: true,
+    });
+
+    setSocket(newSocket);
+
+    // Cleanup: close socket when user logs out or component unmounts
+    return () => {
+      newSocket.close();
+    };
+  // socket intentionally excluded — including it would cause an infinite loop
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
 
   return (
     <SocketContext.Provider value={socket}>{children}</SocketContext.Provider>
