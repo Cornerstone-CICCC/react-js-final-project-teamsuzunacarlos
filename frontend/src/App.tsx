@@ -25,7 +25,7 @@ const ProtectedLayout = () => {
   const { user, loading } = useAuth();
 
   if (loading) return <div style={{ padding: "20px" }}>Loading...</div>;
-  if (!user) return <Navigate to="/login" replace />;
+  if (!user) return <Navigate to="/" replace />;
 
   return (
     <Layout>
@@ -38,19 +38,19 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
+        <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
 
         {/* All protected pages share one ProtectedLayout instance */}
         <Route element={<ProtectedLayout />}>
-          <Route path="/" element={<Navigate to="/discover" replace />} />
           <Route path="/discover" element={<DiscoverPage />} />
           <Route path="/messages" element={<Messages />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/upload-sock" element={<UploadSock />} />
         </Route>
 
-        <Route path="*" element={<Navigate to="/discover" replace />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
       <Toaster />
     </BrowserRouter>

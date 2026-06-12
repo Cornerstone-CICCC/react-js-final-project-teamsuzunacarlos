@@ -1,8 +1,14 @@
-import { Link } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
 import Header from "../components/Navigation/Header";
+import { useAuth } from "../context/AuthContext";
 // import Footer from "../components/Navigation/Navbar";
 
 export default function Home() {
+  const { user, loading } = useAuth();
+
+  if (loading) return null;
+  if (user) return <Navigate to="/discover" replace />;
+
   return (
     <div
       style={{
