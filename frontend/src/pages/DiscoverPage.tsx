@@ -24,77 +24,16 @@ export default function Discover() {
   useEffect(() => {
     const fetchSocks = async () => {
       try {
-        // const res = await fetch('http://localhost:5000/api/socks', { credentials: 'include' });
-        // const data = await res.json();
-        // setSocks(data);
+        const res = await fetch('http://localhost:5000/api/socks', { credentials: 'include' });
+        const data = await res.json();
+        setSocks(data.socks || []);
 
-        const dummySocks: Sock[] = [
-          {
-            id: "1",
-            userId: "userA",
-            color: "Red",
-            pattern: "Striped",
-            size: "M",
-            material: "Cotton",
-            images: [
-              "https://images.unsplash.com/photo-1582966772680-860e372bb558?w=500",
-            ],
-            description:
-              "Lost my twin at the laundromat. Looking for a cozy partner.",
-            status: "lonely",
-            createdAt: "",
-          },
-          {
-            id: "2",
-            userId: "userB",
-            color: "Blue",
-            pattern: "Polka Dot",
-            size: "L",
-            material: "Wool",
-            images: [
-              "https://images.unsplash.com/photo-1586350977771-b3b0abd50c82?w=500",
-            ],
-            description:
-              "Extremely soft, slightly worn out but still has a lot of love to give.",
-            status: "lonely",
-            createdAt: "",
-          },
-        ];
-
-        const dummyMySocks: Sock[] = [
-          {
-            id: "101",
-            userId: "me",
-            color: "Green",
-            pattern: "Christmas Holiday",
-            size: "M",
-            material: "Wool",
-            images: [
-              "https://images.unsplash.com/photo-1543163521-1bf539c55dd2?w=100",
-            ],
-            description: "",
-            status: "lonely",
-            createdAt: "",
-          },
-          {
-            id: "102",
-            userId: "me",
-            color: "Black",
-            pattern: "Business Plain",
-            size: "M",
-            material: "Cotton",
-            images: [
-              "https://images.unsplash.com/photo-1610986603166-f7842862c17e?w=100",
-            ],
-            description: "",
-            status: "lonely",
-            createdAt: "",
-          },
-        ];
-        setMySocks(dummyMySocks);
-        setSocks(dummySocks);
+        const mySocksRes = await fetch('http://localhost:5000/api/socks/my-socks', { credentials: 'include' });
+        const mySocksData = await mySocksRes.json();
+        setMySocks(mySocksData || []);
       } catch (error) {
         console.error("Failed to fetch socks:", error);
+        toast.error("Failed to load socks");
       } finally {
         setLoading(false);
       }
@@ -111,44 +50,36 @@ export default function Discover() {
     if (direction === "like") {
       setShowModal(true);
       return;
-      // toast.success(
-      //   `It's a Match! You and ${currentSock.color} ${currentSock.pattern} Sock belong together!`,
-      //   {
-      //     duration: 5000,
-      //     style: {
-      //       borderRadius: "10px",
-      //       background: "#333",
-      //       color: "#fff",
-      //     },
-      //   },
-      // );
-
-      // await fetch('http://localhost:5000/api/matches', {
-      //   method: 'POST',
-      //   body: JSON.stringify({ sock2Id: currentSock.id, status: 'pending' }),
-      // });
     }
 
     setCurrentIndex((prev) => prev + 1);
   };
 
-  const handleSelectMySock = (mySockId: string) => {
+  const handleSelectMySock = async (mySockId: string) => {
     const selectedSock = mySocks.find((s) => s.id === mySockId);
 
-    toast.success(
-      `Sent match request using your ${selectedSock?.color} sock!`,
-      {
-        duration: 4000,
-      },
-    );
+    try {
+      const res = await fetch('http://localhost:5000/api/matches', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sock2Id: currentSock?.id }),
+        credentials: 'include'
+      });
 
-    // await fetch('http://localhost:5000/api/matches', {
-    //   method: 'POST',
-    //   body: JSON.stringify({ sock1Id: mySockId, sock2Id: currentSock.id }),
-    // });
-
-    setShowModal(false);
-    setCurrentIndex((prev) => prev + 1);
+      if (res.ok) {
+        toast.success(
+          `Sent match request using your ${selectedSock?.color} sock!`,
+          { duration: 4000 }
+        );
+        setShowModal(false);
+        setCurrentIndex((prev) => prev + 1);
+      } else {
+        toast.error("Failed to create match");
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("Error creating match");
+    }
   };
 
   if (loading) {
