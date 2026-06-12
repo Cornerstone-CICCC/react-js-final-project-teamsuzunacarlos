@@ -22,11 +22,25 @@ export const SocketProvider = ({ children }: { children: ReactNode }) => {
   const { user } = useAuth();
 
   useEffect(() => {
-    // When user is logged in
+    // Get token from cookie
+    const getToken = () => {
+      const cookies = document.cookie.split(";");
+      for (let cookie of cookies) {
+        const [name, value] = cookie.trim().split("=");
+        if (name === "token") return decodeURIComponent(value);
+      }
+      return null;
+    };
+
     if (user) {
       const socketUrl =
         (import.meta.env.VITE_SOCKET_URL as string) || "http://localhost:5000";
+      const token = getToken();
+
       const newSocket = io(socketUrl, {
+        auth: {
+          token: token || "",
+        },
         withCredentials: true,
       });
 
@@ -36,13 +50,12 @@ export const SocketProvider = ({ children }: { children: ReactNode }) => {
         newSocket.close();
       };
     } else {
-      // When user logged out
       if (socket) {
         socket.close();
         setSocket(null);
       }
     }
-  }, [user]);
+  }, [user, socket]);
 
   return (
     <SocketContext.Provider value={socket}>{children}</SocketContext.Provider>

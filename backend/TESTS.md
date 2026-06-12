@@ -26,6 +26,7 @@ Create environments to store tokens for multiple users. See "Postman Environment
 ### STEP 1: Register User 1 (Alice)
 
 **Tab 1 - New Request**
+
 ```
 POST http://localhost:5000/api/auth/register
 Content-Type: application/json
@@ -39,6 +40,7 @@ Content-Type: application/json
 ```
 
 **Response:**
+
 ```json
 {
   "message": "User created successfully",
@@ -57,6 +59,7 @@ Content-Type: application/json
 ### STEP 2: Register User 2 (Bob)
 
 **Tab 2 - New Request** (same endpoint, different data)
+
 ```
 POST http://localhost:5000/api/auth/register
 Content-Type: application/json
@@ -76,6 +79,7 @@ Content-Type: application/json
 ### STEP 3: Create Sock for Alice
 
 **Tab 1 - New Request**
+
 ```
 POST http://localhost:5000/api/socks
 Cookie: (automatically included from login)
@@ -91,6 +95,7 @@ Form Data:
 ```
 
 **Response:**
+
 ```json
 {
   "message": "Sock created successfully",
@@ -111,6 +116,7 @@ Save `SOCK_1_ID` for later.
 ### STEP 4: Create Sock for Bob
 
 **Tab 2 - New Request**
+
 ```
 POST http://localhost:5000/api/socks
 Content-Type: multipart/form-data
@@ -131,6 +137,7 @@ Save `SOCK_2_ID`.
 ### STEP 5: Get Available Socks (Browse)
 
 **Tab 1 - View all socks**
+
 ```
 GET http://localhost:5000/api/socks
 ```
@@ -138,6 +145,7 @@ GET http://localhost:5000/api/socks
 Should return Bob's sock (and any others).
 
 **Tab 2 - View all socks**
+
 ```
 GET http://localhost:5000/api/socks
 ```
@@ -149,6 +157,7 @@ Should return Alice's sock.
 ### STEP 6: Create a Match (Alice likes Bob's sock)
 
 **Tab 1 - Alice swipes on Bob's sock**
+
 ```
 POST http://localhost:5000/api/matches
 Content-Type: application/json
@@ -159,6 +168,7 @@ Content-Type: application/json
 ```
 
 **Response:**
+
 ```json
 {
   "message": "Match created successfully",
@@ -181,6 +191,7 @@ Save `MATCH_ID`.
 ### STEP 7: Check Matches
 
 **Tab 1 - Alice's matches**
+
 ```
 GET http://localhost:5000/api/matches
 ```
@@ -188,6 +199,7 @@ GET http://localhost:5000/api/matches
 Should show the pending match with Bob.
 
 **Tab 2 - Bob's matches**
+
 ```
 GET http://localhost:5000/api/matches
 ```
@@ -199,11 +211,13 @@ Should show Alice's pending match.
 ### STEP 8: Accept Match (Bob accepts)
 
 **Tab 2 - Bob accepts match**
+
 ```
 PUT http://localhost:5000/api/matches/MATCH_ID/accept
 ```
 
 **Response:**
+
 ```json
 {
   "message": "Match accepted",
@@ -220,6 +234,7 @@ PUT http://localhost:5000/api/matches/MATCH_ID/accept
 ### STEP 9: Get Conversations
 
 **Tab 1 - Alice gets conversations**
+
 ```
 GET http://localhost:5000/api/messages/conversations
 ```
@@ -227,6 +242,7 @@ GET http://localhost:5000/api/messages/conversations
 Should show her conversation with Bob.
 
 **Tab 2 - Bob gets conversations**
+
 ```
 GET http://localhost:5000/api/messages/conversations
 ```
@@ -238,6 +254,7 @@ Should show his conversation with Alice.
 ### STEP 10: Send a Message (HTTP)
 
 **Tab 1 - Alice sends message**
+
 ```
 POST http://localhost:5000/api/messages
 Content-Type: application/json
@@ -249,6 +266,7 @@ Content-Type: application/json
 ```
 
 **Response:**
+
 ```json
 {
   "message": "Message sent",
@@ -266,6 +284,7 @@ Content-Type: application/json
 ### STEP 11: Get Conversation History
 
 **Tab 2 - Bob retrieves messages**
+
 ```
 GET http://localhost:5000/api/messages/MATCH_ID
 ```
@@ -273,6 +292,7 @@ GET http://localhost:5000/api/messages/MATCH_ID
 Should show Alice's message.
 
 **Tab 1 - Alice retrieves messages**
+
 ```
 GET http://localhost:5000/api/messages/MATCH_ID
 ```
@@ -286,32 +306,33 @@ Should show her own message.
 To test real-time messaging, you need a Socket.IO client. Use **Thunder Client** or **curl** with WebSocket support:
 
 **Connection:**
-```javascript
-const io = require('socket.io-client');
 
-const socket1 = io('http://localhost:5000', {
-  auth: { token: 'ALICE_TOKEN' }
+```javascript
+const io = require("socket.io-client");
+
+const socket1 = io("http://localhost:5000", {
+  auth: { token: "ALICE_TOKEN" },
 });
 
-const socket2 = io('http://localhost:5000', {
-  auth: { token: 'BOB_TOKEN' }
+const socket2 = io("http://localhost:5000", {
+  auth: { token: "BOB_TOKEN" },
 });
 
 // Alice joins match room
-socket1.emit('join-match', 'MATCH_ID');
+socket1.emit("join-match", "MATCH_ID");
 
 // Bob joins match room
-socket2.emit('join-match', 'MATCH_ID');
+socket2.emit("join-match", "MATCH_ID");
 
 // Alice sends real-time message
-socket1.emit('send-message', {
-  matchId: 'MATCH_ID',
-  messageText: 'Real-time hi!'
+socket1.emit("send-message", {
+  matchId: "MATCH_ID",
+  messageText: "Real-time hi!",
 });
 
 // Bob receives it
-socket2.on('receive-message', (data) => {
-  console.log('Bob received:', data.messageText);
+socket2.on("receive-message", (data) => {
+  console.log("Bob received:", data.messageText);
 });
 ```
 
@@ -362,9 +383,10 @@ BASE_URL: http://localhost:5000
 ### Save Response to Variable
 
 After registering Alice, in the **Tests** tab:
+
 ```javascript
 if (pm.response.code === 201) {
-  pm.environment.set('ALICE_USER_ID', pm.response.json().user.id);
+  pm.environment.set("ALICE_USER_ID", pm.response.json().user.id);
 }
 ```
 
@@ -373,6 +395,7 @@ Same for Bob, socks, and match ID.
 ### Use Variables in Requests
 
 Instead of hardcoding IDs:
+
 ```json
 {
   "sock2Id": "{{BOB_SOCK_ID}}"
@@ -384,24 +407,29 @@ Instead of hardcoding IDs:
 ## Troubleshooting Tests
 
 ### "Not authorized to access this route"
+
 - Cookie not set. Check Postman has cookies enabled
 - Tab doesn't have authentication context
 - Token might be expired
 
 ### "User already exists"
+
 - Use different usernames/emails for each test run
 - Or test with new user each time
 
 ### "Cannot match with your own sock"
+
 - Make sure you're using the OTHER user's sock ID
 - Check sock ownership
 
 ### "Socket.IO connection error"
+
 - Backend not running
 - Check `FRONTEND_URL` in backend `.env`
 - Token auth might be failing
 
 ### Socks not visible when browsing
+
 - Socks must have `status: "available"`
 - Check sock's userId isn't excluded from search
 
@@ -420,24 +448,30 @@ Instead of hardcoding IDs:
 ## Common Test Scenarios
 
 ### Scenario 1: Rejected Match
+
 ```
 PUT http://localhost:5000/api/matches/MATCH_ID/reject
 ```
+
 Then check status is "rejected".
 
 ### Scenario 2: Unmatch
+
 ```
 DELETE http://localhost:5000/api/matches/MATCH_ID
 ```
+
 Socks should return to "available".
 
 ### Scenario 3: Multiple Matches
+
 1. Alice creates 2 socks
 2. Bob creates 2 socks
 3. Create 4 different matches
 4. Check matches list for both users
 
 ### Scenario 4: Message Pagination
+
 ```
 GET http://localhost:5000/api/messages/MATCH_ID?page=1&limit=10
 ```

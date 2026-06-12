@@ -21,10 +21,10 @@ import { Toaster } from "react-hot-toast";
 const Home = () => <div style={{ padding: "20px" }}>Home Page</div>;
 
 const ProtectedRoute = ({ children }: { children: React.JSX.Element }) => {
-  // const { user, loading } = useAuth();
+  const { user, loading } = useAuth();
 
-  // if (loading) return <div style={{ padding: "20px" }}>Loading...</div>;
-  // if (!user) return <Navigate to="/login" replace />;
+  if (loading) return <div style={{ padding: "20px" }}>Loading...</div>;
+  if (!user) return <Navigate to="/login" replace />;
 
   return <Layout>{children}</Layout>;
 };
