@@ -9,6 +9,7 @@
 import { BrowserRouter, Routes, Route, Navigate, Outlet } from "react-router-dom";
 import { useAuth } from "./context/AuthContext";
 import Layout from "./components/Styles/Layout";
+import Home from "./pages/Home";
 import Login from "./pages/LoginPage";
 import Signup from "./pages/SignupPage";
 import DiscoverPage from "./pages/DiscoverPage";
