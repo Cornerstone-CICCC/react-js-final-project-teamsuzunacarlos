@@ -7,8 +7,9 @@
 // - Handle app-level layout (Header, navigation)
 
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { useAuth } from "./context/AuthContext";
+// import { useAuth } from "./context/AuthContext";
 import Layout from "./components/Styles/Layout";
+import Home from "./pages/Home";
 import Login from "./pages/LoginPage";
 import Signup from "./pages/SignupPage";
 import DiscoverPage from "./pages/DiscoverPage";
@@ -16,9 +17,6 @@ import UploadSock from "./pages/UploadSockPage";
 import Profile from "./pages/ProfilePage";
 import Messages from "./pages/MessagesPage";
 import { Toaster } from "react-hot-toast";
-
-// move this later
-const Home = () => <div style={{ padding: "20px" }}>Home Page</div>;
 
 const ProtectedRoute = ({ children }: { children: React.JSX.Element }) => {
   // const { user, loading } = useAuth();
