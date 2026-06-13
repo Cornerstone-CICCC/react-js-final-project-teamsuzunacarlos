@@ -17,8 +17,8 @@ const sockSchema = new mongoose.Schema(
     },
     size: {
       type: String,
-      enum: ['small', 'medium', 'large'],
-      default: 'medium',
+      enum: ['S', 'M', 'L', 'XL'],
+      default: 'M',
     },
     material: {
       type: String,

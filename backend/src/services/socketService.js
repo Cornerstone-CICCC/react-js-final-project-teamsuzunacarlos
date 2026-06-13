@@ -13,7 +13,17 @@ export const initializeSocket = (httpServer, config) => {
   });
 
   io.use((socket, next) => {
-    const token = socket.handshake.auth.token;
+    // withCredentials sends httpOnly cookies in the handshake headers
+    let token = socket.handshake.auth.token;
+
+    if (!token) {
+      const cookieHeader = socket.handshake.headers.cookie || '';
+      const tokenEntry = cookieHeader.split(';').find(c => c.trim().startsWith('token='));
+      if (tokenEntry) {
+        token = decodeURIComponent(tokenEntry.split('=')[1].trim());
+      }
+    }
+
     if (!token) {
       return next(new Error('Authentication error'));
     }
